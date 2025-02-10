@@ -33,6 +33,7 @@ export default function App() {
 
       const resp = await AuthServices.signIn({ username, password });
       if (resp.token) await SecureStore.setItemAsync('userToken', resp.token);
+      if (resp.id) await SecureStore.setItemAsync('userId', resp.id);
       navigation.push('Main');
 
   };

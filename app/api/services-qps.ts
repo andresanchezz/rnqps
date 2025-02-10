@@ -9,7 +9,7 @@ class ServicesQps {
     private isAppJson: boolean = true
   ) {
     this.api = axios.create({
-      baseURL: "https://fingers-maintained-grande-approximately.trycloudflare.com/",
+      baseURL: "https://api.servicesqps.com",
       headers: {
         "Content-Type": this.isAppJson
           ? "application/json"

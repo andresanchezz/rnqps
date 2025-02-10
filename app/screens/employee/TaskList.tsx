@@ -7,6 +7,7 @@ import Toast from "react-native-toast-message";
 import { colors } from "../../../styles/colors";
 import { buttonStyles } from "../../../styles/styles";
 import { Task } from '../../models/task-model';
+import * as SecureStore from 'expo-secure-store';
 
 interface Meta {
   hasNextPage: boolean;
@@ -26,6 +27,7 @@ const TaskList: React.FC = () => {
   const [comment, setComment] = useState<string>("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [userId, setUserId] = useState<number>(0);
 
   const confirmModalRef = useRef<Modalize>(null);
   const commentModalRef = useRef<Modalize>(null);
@@ -44,7 +46,7 @@ const TaskList: React.FC = () => {
   const handleConfirm = async () => {
     if (!selectedTask) return;
 
-    const res = await EmployeeServices.AcceptTask(selectedTask);
+    const res = await EmployeeServices.acceptTask(selectedTask);
     console.log(res);
     confirmModalRef.current?.close();
     Toast.show({
@@ -65,7 +67,7 @@ const TaskList: React.FC = () => {
       return;
     }
 
-    const res = await EmployeeServices.DenyTask(selectedTask, comment);
+    const res = await EmployeeServices.denyTask(selectedTask, comment);
     console.log(res);
     commentModalRef.current?.close();
     setComment("");
@@ -76,9 +78,15 @@ const TaskList: React.FC = () => {
   };
 
   const getTaskList = async (page: number) => {
+    if (userId == 0) {
+      const storedUserId = await SecureStore.getItemAsync('userId');
+      if (!storedUserId) return;
+      setUserId(Number(storedUserId));
+    }
+
     try {
       setLoading(true);
-      const res = await EmployeeServices.getTaskList(2, page);
+      const res = await EmployeeServices.getTaskList(userId || Number(await SecureStore.getItemAsync('userId')), page);
       setTasks(prevTasks => [...prevTasks, ...res.data]);
       setMeta(res.meta);
     } finally {
@@ -90,6 +98,7 @@ const TaskList: React.FC = () => {
   useEffect(() => {
     getTaskList(currentPage);
   }, [currentPage]);
+
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);

@@ -12,8 +12,8 @@ export default class EmployeeServices {
         ))
     }
 
-    public static async DenyTask(task: Task, comment: string) {
-        
+    public static async denyTask(task: Task, comment: string) {
+
         const updatedData = {
             date: task.date,
             schedule: task.schedule,
@@ -24,7 +24,7 @@ export default class EmployeeServices {
             typeId: task.typeId,
             statusId: "4",
             userId: task.userId,
-            userComment: comment  
+            userComment: comment
         }
 
         return await handleApiErrors(() =>
@@ -32,7 +32,7 @@ export default class EmployeeServices {
         );
     }
 
-    public static async AcceptTask(task: Task) {
+    public static async acceptTask(task: Task) {
 
         const updatedData = {
             date: task.date,
@@ -53,5 +53,11 @@ export default class EmployeeServices {
             HTTP.patch(`/services/${task.id}`, updatedData)
         );
     }
+
+    public static async confirmTask(task: Task) {
+
+    }
+
+
 
 }

@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import TaskList from "./employee/TaskList";
 import TaskHistory from "./employee/TaskHistory";
+import TaskListManager from "./manager/TaskListManager";
 
 // 📌 Tipado para los roles permitidos
 type UserRole = "admin" | "employee";
@@ -17,15 +18,15 @@ const BottomNavEmployees = () => (
     screenOptions={({ route }) => ({
       tabBarIcon: ({ color, size }) => {
         const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-          Home: "home",
-          Employee: "person",
+          Task: "list-outline",
+          History: "file-tray-stacked-outline",
         };
         return <Ionicons name={icons[route.name]} color={color} size={size} />;
       },
     })}
   >
-    <Tab.Screen name="Home" component={TaskList} />
-    <Tab.Screen name="Employee" component={TaskHistory} />
+    <Tab.Screen name="Task" component={TaskList} />
+    <Tab.Screen name="History" component={TaskHistory} />
   </Tab.Navigator>
 );
 
@@ -42,8 +43,8 @@ const BottomNavManagers = () => (
       },
     })}
   >
-    <Tab.Screen name="Home" component={TaskList} />
-    <Tab.Screen name="Manager" component={TaskList} />
+    <Tab.Screen name="Home" component={TaskListManager} />
+    <Tab.Screen name="Manager" component={TaskListManager} />
   </Tab.Navigator>
 );
 
@@ -52,8 +53,8 @@ const MainView: React.FC<{ role: UserRole }> = ({ role }) => {
   return (
     <View style={styles.container}>
 
-        {role === "admin" ? <BottomNavManagers /> : <BottomNavEmployees />}
-      
+      {role === "admin" ? <BottomNavEmployees /> : <BottomNavManagers />}
+
     </View>
   );
 };
@@ -62,5 +63,5 @@ export default MainView;
 
 // 📌 Estilos
 const styles = StyleSheet.create({
-  container: { flex: 1},
+  container: { flex: 1 },
 });

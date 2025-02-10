@@ -27,10 +27,10 @@ export const handleApiErrors = async <T>(
 ): Promise<T> => {
   try {
     const response = await apiCall();
-    console.log(response)
+    /* console.log(response.data) */
     return response.data as ApiResponse<T>;
   } catch (error: any) {
-    console.log(error.message)
+    console.log(JSON.stringify(error.response.data, null, 2))
     Sentry.captureException(error);
 
     const { response, code } = error as IAxiosError;
