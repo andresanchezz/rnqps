@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Animated, PanResponder, Image, Alert } from "react-native";
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Animated, PanResponder, Image, Alert, Dimensions } from "react-native";
 import { Card, Text, Avatar, TextInput } from "react-native-paper";
 import Modalize from "react-native-modalize";
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
@@ -9,6 +9,7 @@ import Toast from "react-native-toast-message";
 import { colors } from "../../../styles/colors";
 import { buttonStyles } from "../../../styles/styles";
 import { Task } from '../../models/task-model';
+import CardTask from "../../components/CardTask";
 
 interface Meta {
     hasNextPage: boolean;
@@ -33,8 +34,9 @@ const TaskList: React.FC = () => {
         { key: 'rejected', title: 'Rechazadas' },
     ]);
     const [selectedImages, setSelectedImages] = useState<string[]>([]); // Almacena las fotos seleccionadas
-
+    const { height } = Dimensions.get("window");
     const commentModalRef = useRef<Modalize>(null);
+    const panRefs = useRef(new Map()); // Mapa para almacenar los valores de pan de cada tarea
 
     // Función para abrir el modal de fotos
     const openPicturesModal = (task: Task) => {
@@ -71,6 +73,19 @@ const TaskList: React.FC = () => {
         setSelectedImages((prevImages) => prevImages.filter((image) => image !== uri));
     };
 
+    const convertImageToBase64 = async (uri: string) => {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                resolve(reader.result);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    };
+
     // Función para manejar la confirmación de fotos
     const handlePictures = async () => {
         if (!selectedTask) return;
@@ -84,8 +99,13 @@ const TaskList: React.FC = () => {
             return;
         }
 
-        // Aquí puedes enviar las fotos al servidor o manejarlas como necesites
-        console.log("Fotos seleccionadas:", selectedImages);
+        // Convertir todas las imágenes a base64
+        const base64Images = await Promise.all(selectedImages.map(async (uri) => {
+            return await convertImageToBase64(uri);
+        }));
+
+        // Aquí puedes enviar las fotos en base64 al servidor o manejarlas como necesites
+        console.log("Fotos en base64:", base64Images);
         Toast.show({
             text1: "Fotos confirmadas",
             text2: "Las fotos se han subido correctamente.",
@@ -127,9 +147,41 @@ const TaskList: React.FC = () => {
     const renderScene = SceneMap({
         pending: () => (
             <ScrollView contentContainerStyle={styles.container} onScroll={handleScroll} scrollEventThrottle={16}>
-                {tasks.filter(task => task.statusId === "3").map((task) => (
-                    <TaskCard key={task.id} task={task} expandedId={expandedId} toggleExpand={toggleExpand} openPicturesModal={openPicturesModal} />
-                ))}
+                {tasks.filter(task => task.statusId === "3" ).map((task) => {
+                    if (!panRefs.current.has(task.id)) {
+                        panRefs.current.set(task.id, new Animated.ValueXY());
+                    }
+                    const pan = panRefs.current.get(task.id);
+
+                    const panResponder = PanResponder.create({
+                        onMoveShouldSetPanResponder: () => true,
+                        onPanResponderMove: (_, gesture) => {
+                            if (gesture.dx > 0) {
+                                pan.setValue({ x: gesture.dx, y: 0 });
+                            }
+                        },
+                        onPanResponderRelease: (_, gesture) => {
+                            if (gesture.dx > 50) { // Deslizar hacia la derecha
+                                openPicturesModal(task);
+                            }
+                            Animated.spring(pan, {
+                                toValue: { x: 0, y: 0 },
+                                useNativeDriver: true,
+                            }).start();
+                        },
+                    });
+
+                    return (
+                        <Animated.View key={task.id} {...panResponder.panHandlers} style={[{ transform: [{ translateX: pan.x }] }]}>
+                            <CardTask
+                                key={task.id}
+                                task={task}
+                                expandedId={expandedId}
+                                onPress={toggleExpand}
+                            />
+                        </Animated.View>
+                    );
+                })}
                 <View style={{ height: 20 }}></View>
                 {isLoadingMore && <ActivityIndicator size="small" color="#0000ff" />}
                 {!meta?.hasNextPage && tasks.length > 0 && <Text style={styles.noMoreText}>No hay más tareas para cargar</Text>}
@@ -138,7 +190,12 @@ const TaskList: React.FC = () => {
         rejected: () => (
             <ScrollView contentContainerStyle={styles.container} onScroll={handleScroll} scrollEventThrottle={16}>
                 {tasks.filter(task => task.statusId === "4").map((task) => (
-                    <TaskCard key={task.id} task={task} expandedId={expandedId} toggleExpand={toggleExpand} />
+                    <CardTask
+                        key={task.id}
+                        task={task}
+                        expandedId={expandedId}
+                        onPress={toggleExpand}
+                    />
                 ))}
                 <View style={{ height: 20 }}></View>
                 {isLoadingMore && <ActivityIndicator size="small" color="#0000ff" />}
@@ -172,28 +229,30 @@ const TaskList: React.FC = () => {
             />
 
             {/* Modal para agregar fotos */}
-            <Modalize ref={commentModalRef} adjustToContentHeight>
+            <Modalize ref={commentModalRef} height={height * .5}>
                 <View style={styles.modalContent}>
                     <Text style={styles.modalTitle}>Agregar Evidencia</Text>
                     <Text style={styles.modalText}>Necesitamos que subas fotos del trabajo terminado</Text>
 
-                    {/* Contenedor de la galería de fotos */}
-                    <ScrollView horizontal style={styles.galleryContainer}>
-                        {/* Botón para agregar fotos */}
-                        <TouchableOpacity onPress={handleAddPhoto} style={styles.addPhotoButton}>
-                            <Text style={styles.addPhotoText}>+</Text>
-                        </TouchableOpacity>
-
-                        {/* Mostrar las imágenes seleccionadas */}
-                        {selectedImages.map((uri, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                onPress={() => handleRemoveImage(uri)}
-                                style={styles.imageContainer}
-                            >
-                                <Image source={{ uri }} style={styles.image} />
+                    {/* Contenedor de la galería de fotos con scroll vertical */}
+                    <ScrollView style={styles.galleryContainer}>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                            {/* Botón para agregar fotos */}
+                            <TouchableOpacity onPress={handleAddPhoto} style={styles.addPhotoButton}>
+                                <Text style={styles.addPhotoText}>+</Text>
                             </TouchableOpacity>
-                        ))}
+
+                            {/* Mostrar las imágenes seleccionadas */}
+                            {selectedImages.map((uri, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    onPress={() => handleRemoveImage(uri)}
+                                    style={styles.imageContainer}
+                                >
+                                    <Image source={{ uri }} style={styles.image} />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </ScrollView>
 
                     {/* Botón de confirmar */}
@@ -203,59 +262,6 @@ const TaskList: React.FC = () => {
                 </View>
             </Modalize>
         </View>
-    );
-};
-
-const TaskCard: React.FC<{ task: Task, expandedId: string | null, toggleExpand: (id: string) => void, openPicturesModal?: (task: Task) => void }> = ({ task, expandedId, toggleExpand, openPicturesModal }) => {
-    const pan = useRef(new Animated.ValueXY()).current;
-
-    const panResponder = PanResponder.create({
-        onMoveShouldSetPanResponder: () => task.statusId === "3", // Solo permitir deslizar si es una tarea pendiente
-        onPanResponderMove: (_, gesture) => {
-            if (task.statusId === "3" && gesture.dx > 0) { // Solo permitir movimiento hacia la derecha
-                pan.setValue({ x: gesture.dx, y: 0 });
-            }
-        },
-        onPanResponderRelease: (_, gesture) => {
-            if (task.statusId === "3" && gesture.dx > 100 && openPicturesModal) { // Solo abrir el modal si se desliza hacia la derecha
-                openPicturesModal(task);
-            }
-            Animated.spring(pan, {
-                toValue: { x: 0, y: 0 },
-                useNativeDriver: true,
-            }).start();
-        },
-    });
-
-    return (
-        <Animated.View
-            {...(task.statusId === "3" ? panResponder.panHandlers : {})} // Solo aplicar panHandlers si es una tarea pendiente
-            style={[{ transform: [{ translateX: pan.x }] }]}
-        >
-            <Card style={styles.card}>
-                <TouchableOpacity onPress={() => toggleExpand(task.id)} activeOpacity={0.8}>
-                    <View style={styles.row}>
-                        <Avatar.Icon size={40} icon="file" style={styles.squareAvatar} />
-                        <View style={styles.textContainer}>
-                            <Text style={styles.title}>Tarea #{task.id}</Text>
-                            <Text style={styles.description}>Unidad: {task.unitNumber}</Text>
-                            <Text style={styles.description}>Tamaño: {task.unitySize}</Text>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-                {expandedId === task.id && (
-                    <View style={styles.content}>
-                        <Text>Detalles de la tarea {task.id}</Text>
-                        <Text>Comentario: {task.comment || "N/A"}</Text>
-                        <Text>Horario: {task.schedule || "N/A"}</Text>
-                        <Text>Comunidad: {task.communityId}</Text>
-                        <Text>Tipo: {task.typeId}</Text>
-                        <Text>Estado: {task.statusId}</Text>
-                        <Text>Usuario: {task.userId}</Text>
-                    </View>
-                )}
-            </Card>
-        </Animated.View>
     );
 };
 
@@ -324,26 +330,32 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     galleryContainer: {
-        flexDirection: "row",
+        maxHeight: 300, // Altura máxima para el contenedor de imágenes
         marginBottom: 20,
     },
+    imagesWrapper: {
+        flexDirection: "row",
+        flexWrap: "wrap", // Permite que las imágenes se envuelvan en varias líneas
+        justifyContent: "flex-start", // Alinea las imágenes al inicio
+    },
     addPhotoButton: {
-        width: 100,
-        height: 100,
+        width: "30%", // Ancho del 30% para que quepan 3 columnas
+        height: '100%',
+        aspectRatio: 1, // Mantener relación cuadrada
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#E0E0E0",
         borderRadius: 10,
-        marginRight: 10,
+        margin: "1.66%", // Margen entre imágenes (2% del ancho total)
     },
     addPhotoText: {
         fontSize: 24,
         color: "#666",
     },
     imageContainer: {
-        width: 100,
-        height: 100,
-        marginRight: 10,
+        width: "30%", // Ancho del 30% para que quepan 3 columnas
+        aspectRatio: 1, // Mantener relación cuadrada
+        margin: "1.66%", // Margen entre imágenes (2% del ancho total)
         borderRadius: 10,
         overflow: "hidden",
     },

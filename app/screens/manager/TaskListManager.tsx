@@ -1,6 +1,21 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
-import { Card, Text, Avatar, TextInput, FAB, PaperProvider, } from "react-native-paper"; // Importa FAB
+import DateTimePicker from '@react-native-community/datetimepicker';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+  Animated,
+  Easing,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  Text,
+  Platform,
+  Button
+} from "react-native";
+import {  FAB, PaperProvider, TextInput } from "react-native-paper";
 import Modalize from "react-native-modalize";
 import EmployeeServices from "../../services/EmployeeServices";
 import { colors } from "../../../styles/colors";
@@ -10,7 +25,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Dropdown } from "react-native-paper-dropdown";
 import ManagerServices from "../../services/ManagerServices";
 import moment from 'moment';
-
+import CardTask from "../../components/CardTask"; 
 
 interface Meta {
   hasNextPage: boolean;
@@ -22,6 +37,9 @@ interface Meta {
 }
 
 const TaskListManager: React.FC = () => {
+
+  
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -33,18 +51,28 @@ const TaskListManager: React.FC = () => {
   const fullScreenModalRef = useRef<Modalize>(null);
 
   const [date, setDate] = useState(moment().format('YYYY-MM-DD'));
+  const [date2, setDate2] = useState(new Date()/* moment().format('YYYY-MM-DD') */);
   const [schedule, setStartTime] = useState(moment().format('hh:mm'));
   const [comment, setComment] = useState<string>();
-  
   const [unitySize, setUnitSize] = useState<string>();
   const [unitNumber, setUnitNumber] = useState<string>();
   const [communityId, setCommunity] = useState<string>();
   const [typeId, setType] = useState<string>();
-
   const [extraId, setExtras] = useState<string>();
 
   const { height } = Dimensions.get("window");
 
+  const [show, setShow] = useState(false);
+
+  const onChange = (event:any, selectedDate:any) => {
+    const currentDate = selectedDate || date;
+    setShow(Platform.OS === 'ios'); 
+    setDate(currentDate);
+  };
+
+  const showDatepicker = () => {
+    setShow(true);
+  };
 
   const openFullScreenModal = () => {
     fullScreenModalRef.current?.open();
@@ -71,7 +99,7 @@ const TaskListManager: React.FC = () => {
     }
   };
 
-  const [cleaningTypes, setCleaningTypes] = useState<{ label: string; value: string, description:string }[]>([]);
+  const [cleaningTypes, setCleaningTypes] = useState<{ label: string; value: string, description: string }[]>([]);
 
   const getTypesList = async () => {
     const res = await ManagerServices.getServicesTypes();
@@ -112,7 +140,6 @@ const TaskListManager: React.FC = () => {
   };
 
   const addNewService = async () => {
-
     const newService = {
       unitySize,
       date,
@@ -123,29 +150,20 @@ const TaskListManager: React.FC = () => {
       comment,
       communityId,
       statusId: '1'
-    }
+    };
 
-
-    await ManagerServices.addNewService(
-      newService
-    ); 
-
-    fullScreenModalRef.current?.close()
-
-  }
+    await ManagerServices.addNewService(newService);
+    fullScreenModalRef.current?.close();
+  };
 
   useEffect(() => {
     getTaskList(currentPage);
   }, [currentPage]);
 
-
-  const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
-  };
-
-  const handleScroll = (event: any) => {
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20;
+
     if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
       if (meta?.hasNextPage && !isLoadingMore) {
         setIsLoadingMore(true);
@@ -165,38 +183,24 @@ const TaskListManager: React.FC = () => {
 
   return (
     <View style={styles.mainContainer}>
-      <ScrollView contentContainerStyle={styles.container} onScroll={handleScroll} scrollEventThrottle={16}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
         {tasks.map((task) => (
-          <Card key={task.id} style={styles.card}>
-            <TouchableOpacity onPress={() => toggleExpand(task.id)} activeOpacity={0.8}>
-              <View style={styles.row}>
-                <Avatar.Icon size={40} icon="file" style={styles.squareAvatar} />
-                <View style={styles.textContainer}>
-                  <Text style={styles.title}>Tarea #{task.id}</Text>
-                  <Text style={styles.description}>Unidad: {task.unitNumber}</Text>
-                  <Text style={styles.description}>Tamaño: {task.unitySize}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-            {expandedId === task.id && (
-              <View style={styles.content}>
-                <Text>Detalles de la tarea {task.id}</Text>
-                <Text>Comentario: {task.comment || "N/A"}</Text>
-                <Text>Horario: {task.schedule || "N/A"}</Text>
-                <Text>Comunidad: {task.communityId}</Text>
-                <Text>Tipo: {task.typeId}</Text>
-                <Text>Estado: {task.statusId}</Text>
-                <Text>Usuario: {task.userId}</Text>
-              </View>
-            )}
-          </Card>
+          <CardTask
+            key={task.id}
+            task={task} 
+            expandedId={expandedId}
+            onPress={setExpandedId}
+          />
         ))}
         <View style={{ height: 20 }}></View>
         {isLoadingMore && <ActivityIndicator size="small" color="#0000ff" />}
         {!meta?.hasNextPage && tasks.length > 0 && <Text style={styles.noMoreText}>No hay más tareas para cargar</Text>}
       </ScrollView>
 
-      {/* Botón flotante (FAB) */}
       <FAB
         style={styles.fab}
         icon="plus"
@@ -204,14 +208,26 @@ const TaskListManager: React.FC = () => {
         onPress={openFullScreenModal}
       />
 
-
-
-      <Modalize ref={fullScreenModalRef} height={height * 1}>
+      <Modalize ref={fullScreenModalRef} height={height * .9}>
         <PaperProvider>
           <View style={styles.fullScreenModalContent}>
             <Text style={styles.modalTitle}>Create new task</Text>
-
             <ScrollView>
+
+            <View>
+        <Button title="Select date" onPress={showDatepicker} />
+      </View>
+      {show && (
+        <DateTimePicker
+          testID="dateTimePicker"
+          value={date2}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={onChange}
+        />
+      )}
+
               <Dropdown
                 mode="outlined"
                 label="Unit size"
@@ -226,14 +242,12 @@ const TaskListManager: React.FC = () => {
                 value={unitySize}
                 onSelect={(value) => setUnitSize(value)}
               />
-
               <TextInput
                 mode="outlined"
                 placeholder="Unit number"
                 value={unitNumber}
                 onChangeText={(text) => setUnitNumber(text)}
               />
-
               <Dropdown
                 mode="outlined"
                 label="Community"
@@ -242,19 +256,17 @@ const TaskListManager: React.FC = () => {
                 value={communityId}
                 onSelect={(value) => setCommunity(value)}
               />
-
               <Dropdown
                 mode="outlined"
                 label="Type"
                 placeholder="Select type"
                 options={cleaningTypes.map(type => ({
                   ...type,
-                  label: `${type.label} ( ${type.description} )` 
+                  label: `${type.label} ( ${type.description} )`
                 }))}
                 value={typeId}
                 onSelect={(value) => setType(value)}
               />
-
               <Dropdown
                 mode="outlined"
                 label="Extras"
@@ -263,7 +275,6 @@ const TaskListManager: React.FC = () => {
                 value={extraId}
                 onSelect={(value) => setExtras(value)}
               />
-
               <TextInput
                 mode="outlined"
                 placeholder="Comment"
@@ -272,7 +283,6 @@ const TaskListManager: React.FC = () => {
                 onChangeText={(text) => setComment(text)}
               />
             </ScrollView>
-
             <View style={{ height: 10 }}></View>
             <TouchableOpacity onPress={() => addNewService()} style={buttonStyles.button}>
               <Text style={buttonStyles.buttonText}>Create</Text>
@@ -280,58 +290,19 @@ const TaskListManager: React.FC = () => {
           </View>
         </PaperProvider>
       </Modalize>
-
-
-
     </View>
   );
 };
 
-export default TaskListManager;
-
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
+    backgroundColor: colors.light
   },
   container: {
     flexGrow: 1,
     paddingVertical: 8,
     paddingBottom: 80,
-  },
-  card: {
-    marginVertical: 4,
-    marginHorizontal: 16,
-    padding: 10,
-    borderRadius: 0,
-    backgroundColor: "#FFFFFF",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  squareAvatar: {
-    backgroundColor: "#E0E0E0",
-    borderRadius: 4,
-  },
-  textContainer: {
-    flex: 1,
-    marginHorizontal: 10,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  description: {
-    fontSize: 14,
-    color: "#666",
-  },
-  content: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: colors.light,
-    borderTopWidth: 0.5,
-    borderTopColor: colors.dark,
   },
   loadingContainer: {
     flex: 1,
@@ -339,12 +310,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  modalContent: {
-    padding: 20,
-  },
   fullScreenModalContent: {
     padding: 20,
-    height: '100%',
   },
   modalTitle: {
     fontSize: 18,
@@ -352,35 +319,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: "center",
   },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  textArea: {
-    marginBottom: 16,
-    paddingVertical: 10,
-  },
   noMoreText: {
     textAlign: "center",
     marginVertical: 16,
-    color: "#666",
-  },
-  button: {
-    margin: 16,
-    padding: 10,
-    backgroundColor: colors.primary,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    textAlign: "center",
+
   },
   fab: {
     position: 'absolute',
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.primary, // Color del FAB
+    backgroundColor: colors.primary,
   },
 });
+
+export default TaskListManager;

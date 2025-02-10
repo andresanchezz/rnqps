@@ -47,8 +47,6 @@ export default class EmployeeServices {
             userId: task.userId,
         }
 
-        console.log(updatedData);
-
         return await handleApiErrors(() =>
             HTTP.patch(`/services/${task.id}`, updatedData)
         );
@@ -56,6 +54,11 @@ export default class EmployeeServices {
 
     public static async confirmTask(task: Task) {
 
+        const updatedData = {}
+
+        return await handleApiErrors(() =>
+            HTTP.patch(`/services/${task.id}`, updatedData)
+        );
     }
 
 

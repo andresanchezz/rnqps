@@ -8,6 +8,7 @@ import { colors } from "../../../styles/colors";
 import { buttonStyles } from "../../../styles/styles";
 import { Task } from '../../models/task-model';
 import * as SecureStore from 'expo-secure-store';
+import CardTask from "../../components/CardTask";
 
 interface Meta {
   hasNextPage: boolean;
@@ -153,29 +154,12 @@ const TaskList: React.FC = () => {
 
           return (
             <Animated.View key={task.id} {...panResponder.panHandlers} style={[{ transform: [{ translateX: pan.x }] }]}>
-              <Card style={styles.card}>
-                <TouchableOpacity onPress={() => toggleExpand(task.id)} activeOpacity={0.8}>
-                  <View style={styles.row}>
-                    <Avatar.Icon size={40} icon="file" style={styles.squareAvatar} />
-                    <View style={styles.textContainer}>
-                      <Text style={styles.title}>Tarea #{task.id}</Text>
-                      <Text style={styles.description}>Unidad: {task.unitNumber}</Text>
-                      <Text style={styles.description}>Tamaño: {task.unitySize}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-                {expandedId === task.id && (
-                  <View style={styles.content}>
-                    <Text>Detalles de la tarea {task.id}</Text>
-                    <Text>Comentario: {task.comment || "N/A"}</Text>
-                    <Text>Horario: {task.schedule || "N/A"}</Text>
-                    <Text>Comunidad: {task.communityId}</Text>
-                    <Text>Tipo: {task.typeId}</Text>
-                    <Text>Estado: {task.statusId}</Text>
-                    <Text>Usuario: {task.userId}</Text>
-                  </View>
-                )}
-              </Card>
+              <CardTask
+                key={task.id}
+                task={task}
+                expandedId={expandedId}
+                onPress={setExpandedId}
+              />
             </Animated.View>
           );
         })}
@@ -221,6 +205,7 @@ export default TaskList;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
+    backgroundColor: colors.light
   },
   container: {
     flexGrow: 1,
@@ -228,20 +213,17 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   card: {
-    marginVertical: 4,
-    marginHorizontal: 16,
     padding: 10,
     borderRadius: 0,
     backgroundColor: "#FFFFFF",
   },
   row: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
   },
   squareAvatar: {
     backgroundColor: "#E0E0E0",
-    borderRadius: 4,
+    borderRadius: '50%',
   },
   textContainer: {
     flex: 1,
