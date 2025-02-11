@@ -1,21 +1,22 @@
-import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Image, View, TouchableOpacity, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Image, View, TouchableOpacity } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
-import Toast from 'react-native-toast-message';
 import { TextInput, Text, } from 'react-native-paper';
-import { RootParamList } from '../models/root-param-list';
-import AuthServices from '../services/AuthServices';
-import { buttonStyles } from '../../styles/styles';
-import * as SecureStore from 'expo-secure-store'; 
-import { typography } from '../../styles/typography';
-import { colors } from '../../styles/colors';
+import * as SecureStore from 'expo-secure-store';
+import Toast from 'react-native-toast-message';
+import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 
-// Tipo de navegación
-type SplashScreenNavigationProp = StackNavigationProp<RootParamList, 'Splash'>;
+import { RootParamList } from '../../navigation/kickoff-stack.navigation';
+import { AuthResponse } from '../../interfaces/auth/auth';
+import { typography } from '../../../styles/typography';
+import { apiServicesQPS } from '../../api/services-qps';
+import { buttonStyles } from '../../../styles/styles';
+import { colors } from '../../../styles/colors';
 
-export default function App() {
+type SplashScreenNavigationProp = StackNavigationProp<RootParamList, 'LoginScreen'>;
+
+const LoginScreen = () => {
   const navigation = useNavigation<SplashScreenNavigationProp>();
 
   const [username, setEmail] = useState('');
@@ -31,14 +32,20 @@ export default function App() {
       return;
     }
 
-      const resp = await AuthServices.signIn({ username, password });
+    try {
+      const { data: { token, email, id } } = await apiServicesQPS.post<AuthResponse>('/auth', {
+        username,
+        password
+      });
 
-      if (resp.token) await SecureStore.setItemAsync('userToken', resp.token);
-      if (resp.id) await SecureStore.setItemAsync('userId', resp.id);
-      if (resp.role) await SecureStore.setItemAsync('userId', resp.id);
-      
-      navigation.push('Main');
+      await SecureStore.setItemAsync('userToken', token);
+      await SecureStore.setItemAsync('userId', id);
+      await SecureStore.setItemAsync('email', email);
 
+      navigation.push('HomeStackNavigation');
+    } catch (error) {
+      //TODO: handle toast here!!!
+    }
   };
 
   return (
@@ -55,7 +62,7 @@ export default function App() {
         />
 
         <View style={{ flex: 1, justifyContent: 'space-evenly' }}>
-          <Text style={{ textAlign: 'center', ...typography.headingLarge.black, color:colors.primary }}>
+          <Text style={{ textAlign: 'center', ...typography.headingLarge.black, color: colors.primary }}>
             Welcome back
           </Text>
           <View>
@@ -80,13 +87,11 @@ export default function App() {
             <Text style={buttonStyles.buttonText}>Sign in</Text>
           </TouchableOpacity>
         </View>
-
-
-
       </ScrollView>
       <StatusBar style="auto" />
     </KeyboardAvoidingView>
-
   );
 }
+
+export default LoginScreen
 

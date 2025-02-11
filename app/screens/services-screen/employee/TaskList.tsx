@@ -1,14 +1,24 @@
-import React, { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Animated, PanResponder } from "react-native";
-import { Card, Text, Avatar, TextInput } from "react-native-paper";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Animated,
+  PanResponder,
+  RefreshControl,
+} from "react-native";
+import { Text, TextInput } from "react-native-paper";
 import Modalize from "react-native-modalize";
 import EmployeeServices from "../../services/EmployeeServices";
 import Toast from "react-native-toast-message";
 import { colors } from "../../../styles/colors";
 import { buttonStyles } from "../../../styles/styles";
-import { Task } from '../../models/task-model';
-import * as SecureStore from 'expo-secure-store';
+import { Task } from "../../models/task-model";
+import * as SecureStore from "expo-secure-store";
 import CardTask from "../../components/CardTask";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface Meta {
   hasNextPage: boolean;
@@ -29,6 +39,7 @@ const TaskList: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [userId, setUserId] = useState<number>(0);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const confirmModalRef = useRef<Modalize>(null);
   const commentModalRef = useRef<Modalize>(null);
@@ -51,8 +62,8 @@ const TaskList: React.FC = () => {
     console.log(res);
     confirmModalRef.current?.close();
     Toast.show({
-      text1: 'La tarea se tomó, gracias por confirmar',
-      text2: 'Se te asignó la tarea.'
+      text1: "La tarea se tomó, gracias por confirmar",
+      text2: "Se te asignó la tarea.",
     });
   };
 
@@ -61,9 +72,9 @@ const TaskList: React.FC = () => {
 
     if (!comment.trim()) {
       Toast.show({
-        type: 'error',
-        text1: 'Comentario vacío',
-        text2: 'Escribe algo antes de enviar'
+        type: "error",
+        text1: "Comentario vacío",
+        text2: "Escribe algo antes de enviar",
       });
       return;
     }
@@ -80,26 +91,41 @@ const TaskList: React.FC = () => {
 
   const getTaskList = async (page: number) => {
     if (userId == 0) {
-      const storedUserId = await SecureStore.getItemAsync('userId');
+      const storedUserId = await SecureStore.getItemAsync("userId");
       if (!storedUserId) return;
       setUserId(Number(storedUserId));
     }
 
     try {
       setLoading(true);
-      const res = await EmployeeServices.getTaskList(userId || Number(await SecureStore.getItemAsync('userId')), page);
-      setTasks(prevTasks => [...prevTasks, ...res.data]);
+      const res = await EmployeeServices.getTaskList(
+        userId || Number(await SecureStore.getItemAsync("userId")),
+        page
+      );
+      setTasks((prevTasks) => (page === 1 ? res.data : [...prevTasks, ...res.data]));
       setMeta(res.meta);
     } finally {
       setLoading(false);
       setIsLoadingMore(false);
+      setRefreshing(false);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      getTaskList(1);
+    }, [])
+  );
 
   useEffect(() => {
     getTaskList(currentPage);
   }, [currentPage]);
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    setCurrentPage(1);
+    getTaskList(1);
+  };
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -108,10 +134,13 @@ const TaskList: React.FC = () => {
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20;
-    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+    if (
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom
+    ) {
       if (meta?.hasNextPage && !isLoadingMore) {
         setIsLoadingMore(true);
-        setCurrentPage(prevPage => prevPage + 1);
+        setCurrentPage((prevPage) => prevPage + 1);
       }
     }
   };
@@ -127,7 +156,14 @@ const TaskList: React.FC = () => {
 
   return (
     <View style={styles.mainContainer}>
-      <ScrollView contentContainerStyle={styles.container} onScroll={handleScroll} scrollEventThrottle={16}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {tasks.map((task) => {
           if (!panRefs.current.has(task.id)) {
             panRefs.current.set(task.id, new Animated.ValueXY());
@@ -140,9 +176,11 @@ const TaskList: React.FC = () => {
               pan.setValue({ x: gesture.dx, y: 0 });
             },
             onPanResponderRelease: (_, gesture) => {
-              if (gesture.dx > 50) { // Deslizar hacia la derecha
+              if (gesture.dx > 50) {
+                // Deslizar hacia la derecha
                 openConfirmModal(task);
-              } else if (gesture.dx < -50) { // Deslizar hacia la izquierda
+              } else if (gesture.dx < -50) {
+                // Deslizar hacia la izquierda
                 openDenyModal(task);
               }
               Animated.spring(pan, {
@@ -153,7 +191,11 @@ const TaskList: React.FC = () => {
           });
 
           return (
-            <Animated.View key={task.id} {...panResponder.panHandlers} style={[{ transform: [{ translateX: pan.x }] }]}>
+            <Animated.View
+              key={task.id}
+              {...panResponder.panHandlers}
+              style={{ transform: [{ translateX: pan.x }] }}
+            >
               <CardTask
                 key={task.id}
                 task={task}
@@ -165,13 +207,17 @@ const TaskList: React.FC = () => {
         })}
         <View style={{ height: 20 }}></View>
         {isLoadingMore && <ActivityIndicator size="small" color="#0000ff" />}
-        {!meta?.hasNextPage && tasks.length > 0 && <Text style={styles.noMoreText}>No hay más tareas para cargar</Text>}
+        {!meta?.hasNextPage && tasks.length > 0 && (
+          <Text style={styles.noMoreText}>No hay más tareas para cargar</Text>
+        )}
       </ScrollView>
 
       <Modalize ref={confirmModalRef} adjustToContentHeight>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Confirmar Tarea</Text>
-          <Text style={styles.modalText}>¿Estás seguro de que deseas confirmar esta tarea?</Text>
+          <Text style={styles.modalText}>
+            ¿Estás seguro de que deseas confirmar esta tarea?
+          </Text>
           <TouchableOpacity onPress={handleConfirm} style={buttonStyles.button}>
             <Text style={buttonStyles.buttonText}>Confirmar</Text>
           </TouchableOpacity>
@@ -181,7 +227,9 @@ const TaskList: React.FC = () => {
       <Modalize ref={commentModalRef} adjustToContentHeight>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Agregar Comentario</Text>
-          <Text style={styles.modalText}>Necesitamos saber por qué deniegas la tarea</Text>
+          <Text style={styles.modalText}>
+            Necesitamos saber por qué deniegas la tarea
+          </Text>
           <TextInput
             mode="outlined"
             multiline
@@ -205,7 +253,7 @@ export default TaskList;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: colors.light
+    backgroundColor: colors.light,
   },
   container: {
     flexGrow: 1,
@@ -223,7 +271,7 @@ const styles = StyleSheet.create({
   },
   squareAvatar: {
     backgroundColor: "#E0E0E0",
-    borderRadius: '50%',
+    borderRadius: "50%",
   },
   textContainer: {
     flex: 1,
