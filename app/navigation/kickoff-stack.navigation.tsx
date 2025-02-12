@@ -1,5 +1,4 @@
 import { createStackNavigator } from '@react-navigation/stack'
-import React from 'react'
 
 import { useAuthStore, useHomeStore } from '../state'
 
@@ -16,8 +15,8 @@ export type RootParamList = {
 const Stack = createStackNavigator()
 
 const KickoffStackNavigation = () => {
-    const { isLoading } = useHomeStore()
-    const { token } = useAuthStore()
+    const { isLoading } = useHomeStore();
+    const { token } = useAuthStore();
 
     return (
         <Stack.Navigator initialRouteName="SplashScreen"

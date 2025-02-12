@@ -8,7 +8,7 @@ export const apiServicesQPS = axios.create({
 })
 
 apiServicesQPS.interceptors.request.use(async function (config) {
-  const { token } = useAuthStore()
+  const { token } = useAuthStore.getState()
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`

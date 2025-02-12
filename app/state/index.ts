@@ -1,10 +1,13 @@
 import { create } from "zustand";
+import { UserById } from "../interfaces/user/userById";
 
 interface AuthStore {
     token: string;
     role: string;
+    user: UserById | null;
     setToken(token: string): void;
     setRole(role: string): void;
+    setUser(user: UserById): void;
 }
 
 interface HomeStore {
@@ -15,8 +18,10 @@ interface HomeStore {
 const useAuthStore = create<AuthStore>((set) => ({
     token: "",
     role: "",
+    user: null,
     setToken: (token: string) => set((_) => ({ token })),
     setRole: (role: string) => set((_) => ({ role })),
+    setUser: (user: UserById) => set((_) => ({ user }))
 }));
 
 const useHomeStore = create<HomeStore>((set) => ({
