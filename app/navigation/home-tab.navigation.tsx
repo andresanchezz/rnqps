@@ -25,7 +25,7 @@ const HomeTabNavigation = () => {
                 },
             })}
         >
-            <Tab.Screen options={{ title: 'Services', tabBarInactiveTintColor: colors.primary }} name="ServicesScreen" component={ServicesScreen} />
+            <Tab.Screen options={{ title: 'Services' }} name="ServicesScreen" component={ServicesScreen} />
             <Tab.Screen options={{ title: 'History' }} name="HistoryScreen" component={HistoryScreen} />
             <Tab.Screen options={{ title: 'Profile' }} name="ProfileScreen" component={ProfileScreen} />
         </Tab.Navigator>

@@ -5,7 +5,7 @@ import { Service } from "../../../interfaces/services/services.interface";
 import useCardBehaviour from "./hooks/useCardBehaviour.hook";
 import { typography } from "../../../../styles/typography";
 
-interface CardTaskProps {
+interface CardServiceProps {
     service: Service;
     role: string;
     onAccept?: () => void; // Prop opcional
@@ -14,12 +14,12 @@ interface CardTaskProps {
     hideButtons?: boolean; // Prop para ocultar botones
 }
 
-const CardTask: React.FC<CardTaskProps> = ({ 
-    service, 
-    role, 
-    onAccept, 
-    onDeny, 
-    onConfirm, 
+const CardService: React.FC<CardServiceProps> = ({
+    service,
+    role,
+    onAccept,
+    onDeny,
+    onConfirm,
     hideButtons = false // Valor por defecto
 }) => {
     const { toggleExpand, animatedHeight, isExpanded } = useCardBehaviour(role);
@@ -71,7 +71,7 @@ const CardTask: React.FC<CardTaskProps> = ({
                             )}
                             {onConfirm && (
                                 <IconButton
-                                    icon="alert-circle" // Icono para el nuevo botón
+                                    icon="check-all"
                                     size={24}
                                     onPress={onConfirm}
                                     style={styles.iconButton}
@@ -155,4 +155,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default CardTask;
+export default CardService;

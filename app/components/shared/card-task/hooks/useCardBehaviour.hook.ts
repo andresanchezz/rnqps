@@ -8,10 +8,6 @@ const useCardBehaviour = (role: string) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
 
-    const addAttachments = () => {
-        console.log('Adjuntos añadidos');
-    };
-
 
     const getRoleKey = (role: string): keyof typeof Roles | undefined => {
         return Object.keys(Roles).find((key) => Roles[key as keyof typeof Roles] === role) as keyof typeof Roles;

@@ -4,6 +4,7 @@ import React from 'react';
 import useSplashScreenHook from './hooks/useSplashScreen.hook';
 
 const SplashScreen = () => {
+  
   useSplashScreenHook()
 
   return (

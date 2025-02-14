@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Text } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import { colors } from "../../../styles/colors";
 import useServicesInformation from "../services-screen/hooks/useServicesInformation.hook";
-import CardTask from "../../components/shared/card-task/CardTask";
+import CardService from "../../components/shared/card-task/CardService";
 import { Service } from "../../interfaces/services/services.interface";
+import CustomButtonSheet from "../../components/shared/bottom-sheet/CustomButtonSheet";
+import { buttonStyles } from "../../../styles/styles";
+import { typography } from "../../../styles/typography";
 
 const HistoryScreen = () => {
 
@@ -12,6 +15,8 @@ const HistoryScreen = () => {
         isLoading,
         services,
         user,
+        openConfirmSheet,
+        confirmBottomSheet
     } = useServicesInformation();
 
 
@@ -22,12 +27,11 @@ const HistoryScreen = () => {
     const PendingTab = () => (
         <View style={styles.tabContainer}>
             {pendingServices?.map((service) => (
-                <CardTask
+                <CardService
                     key={service.id}
                     service={service}
                     role={user?.roleId!}
-                    onAccept={() => { }}
-                    onDeny={() => { }}
+                    onConfirm={openConfirmSheet}
                 />
             ))}
         </View>
@@ -36,7 +40,7 @@ const HistoryScreen = () => {
     const CompletedTab = () => (
         <View style={styles.tabContainer}>
             {completedServices?.map((service) => (
-                <CardTask
+                <CardService
                     key={service.id}
                     service={service}
                     role={user?.roleId!}
@@ -60,8 +64,8 @@ const HistoryScreen = () => {
     const renderTabBar = (props: any) => (
         <TabBar
             {...props}
-            indicatorStyle={{ backgroundColor: colors.primary }}
-            style={{ backgroundColor: colors.light }}
+            indicatorStyle={{ backgroundColor: colors.light }}
+            style={[{ backgroundColor: colors.secondary }]}
             labelStyle={{ color: colors.dark }}
         />
     );
@@ -74,7 +78,22 @@ const HistoryScreen = () => {
                 onIndexChange={setIndex}
                 renderTabBar={renderTabBar}
             />
+
+
+            <CustomButtonSheet ref={confirmBottomSheet} snapPoints={['10%', '25%']}>
+                <View style={styles.form}>
+                    <Text style={styles.bottomSheetTitle}>¿Aceptar tarea?</Text>
+                    <Text style={styles.bottomSheetText}>Vas a aceptar la tarea y se te asignará</Text>
+                    <TouchableOpacity onPress={() => { openConfirmSheet }} style={buttonStyles.button}>
+                        <Text style={buttonStyles.buttonText}>Confirmar</Text>
+                    </TouchableOpacity>
+                </View>
+            </CustomButtonSheet>
+
         </View>
+
+
+
     );
 };
 
@@ -85,8 +104,35 @@ const styles = StyleSheet.create({
     },
     tabContainer: {
         flex: 1,
-        padding: 16,
     },
+
+    fab: {
+        position: 'absolute',
+        margin: 16,
+        right: 0,
+        bottom: 0,
+        backgroundColor: colors.primary,
+    },
+    form: {
+        padding: 20,
+    },
+    bottomSheetTitle: {
+        ...typography.headingMedium.bold,
+        textAlign: 'center',
+    },
+    bottomSheetText: {
+        ...typography.bodyLarge.regular,
+        textAlign: 'center',
+        marginVertical: 16
+    },
+    inputSpacing: {
+        height: 15,
+    },
+    timeButton: {
+        borderRadius: 6
+    }
+
 });
 
 export default HistoryScreen;
+

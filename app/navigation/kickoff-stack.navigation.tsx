@@ -15,6 +15,7 @@ export type RootParamList = {
 const Stack = createStackNavigator()
 
 const KickoffStackNavigation = () => {
+    
     const { isLoading } = useHomeStore();
     const { token } = useAuthStore();
 

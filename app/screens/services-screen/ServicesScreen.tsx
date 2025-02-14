@@ -1,25 +1,37 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
-import { FAB, PaperProvider, TextInput } from "react-native-paper";
+import { FAB, PaperProvider, TextInput, Button } from "react-native-paper";
 import { colors } from "../../../styles/colors";
 import useServicesInformation from "./hooks/useServicesInformation.hook";
-import CardTask from "../../components/shared/card-task/CardTask";
 import { Dropdown } from "react-native-paper-dropdown";
 import { buttonStyles } from "../../../styles/styles";
 import { typography } from "../../../styles/typography";
 import CustomButtonSheet from "../../components/shared/bottom-sheet/CustomButtonSheet";
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import moment from "moment";
+import CardService from "../../components/shared/card-task/CardService";
+import { ScrollView } from "react-native-gesture-handler";
+
+moment.locale('es');
 
 const ServicesScreen = () => {
+    const [mode, setMode] = useState<'date' | 'time'>('date');
 
     const {
-        isLoading,
         schedule,
+        setSchedule,
+        isScheduleSelected,
+        setisScheduleSelected,
+        date,
+        setDate,
+        isDateSelected,
+        setIsDateSelected,
         services,
         user,
-        addNewService,
-        unitSize,
-        setUnitSize,
-        unitNumber,
+        createNewService,
+        unitySize,
+        setUnitySize,
+        unityNumber,
         typeId,
         extraId,
         communityId,
@@ -27,11 +39,9 @@ const ServicesScreen = () => {
         comment,
         setComment,
         setCommunityId,
-        setDate,
         setExtraId,
-        setSchedule,
         setTypeId,
-        setUnitNumber,
+        setUnityNumber,
         acceptBottomSheet,
         createBottomSheet,
         denyBottomSheet,
@@ -39,35 +49,85 @@ const ServicesScreen = () => {
         openAcceptSheet,
         openConfirmSheet,
         setSelectedService,
-        openDenySheet
+        openDenySheet,
+        openCreateServicesSheet
     } = useServicesInformation();
+
+    const onChange = (event: any, selectedDate: Date | undefined) => {
+        if (selectedDate) {
+            if (mode === 'date') {
+                setDate(selectedDate);
+                setIsDateSelected(true);
+            } else if (mode === 'time') {
+                setSchedule(selectedDate);
+                setisScheduleSelected(true);
+            }
+        }
+    };
+
+    const showMode = (currentMode: 'date' | 'time') => {
+        setMode(currentMode);
+        DateTimePickerAndroid.open({
+            value: currentMode === 'date' ? date : schedule,
+            onChange,
+            mode: currentMode,
+            is24Hour: true,
+            minimumDate: new Date(),
+        });
+    };
 
     return (
         <View style={styles.mainContainer}>
-            {services?.data.map((service) => (
-                <CardTask
-                    key={service.id}
-                    service={service}
-                    role={user?.roleId!}
-                    onAccept={() => {
-                        openAcceptSheet();
-                        setSelectedService(service);
-                    }}
-                    onDeny={() => { openDenySheet(); setSelectedService(service) }}
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {services?.data.map((service) => (
+                    <CardService
+                        key={service.id}
+                        service={service}
+                        role={user?.roleId!}
+                        onAccept={user?.roleId === "4" ? () => {
+                            openAcceptSheet();
+                            setSelectedService(service);
+                        } : undefined}
+                        onDeny={user?.roleId === "4" ? () => {
+                            openDenySheet();
+                            setSelectedService(service);
+                        } : undefined}
+                    />
+                ))}
+            </ScrollView>
+
+            {user?.roleId === "1" && (
+                <FAB
+                    style={styles.fab}
+                    icon="plus"
+                    color={colors.light}
+                    onPress={openCreateServicesSheet}
                 />
-            ))}
+            )}
 
-           {user?.roleId === "4" && <FAB
-                style={styles.fab}
-                icon="plus"
-                color={colors.light}
-                onPress={() => createBottomSheet.current?.expand()}
-            /> }
-
-            {/* Modal para crear un servicio */}
-            <CustomButtonSheet ref={createBottomSheet}>
+            {/*Modal para crear un servicio*/}
+            <CustomButtonSheet ref={createBottomSheet} snapPoints={['50', '90']}>
                 <View style={styles.form}>
                     <Text style={styles.bottomSheetTitle}>Crear un servicio</Text>
+                    <View style={{ height: 15 }}></View>
+                    <Button mode="outlined" onPress={() => showMode('date')} style={styles.timeButton}>
+                        <Text style={{ color: colors.dark }}>
+                            {isDateSelected
+                                ? `Fecha seleccionada: ${moment(date).format('MMMM D YYYY')}` // Formato: "enero 5 2025"
+                                : 'Seleccionar fecha'}
+                        </Text>
+                    </Button>
+                    <View style={styles.inputSpacing} />
+
+                    <Button mode="outlined" onPress={() => showMode('time')} style={styles.timeButton}>
+                        <Text style={{ color: colors.dark }}>
+                            {isScheduleSelected
+                                ? `Hora seleccionada: ${moment(schedule).format('hh:mm A')}` // Formato: "02:30 PM"
+                                : 'Seleccionar hora'}
+                        </Text>
+                    </Button>
+                    <View style={styles.inputSpacing} />
+
 
                     <Dropdown
                         mode="outlined"
@@ -80,15 +140,16 @@ const ServicesScreen = () => {
                             { label: "4 Bedroom", value: "4 Bedroom" },
                             { label: "5 Bedroom", value: "5 Bedroom" },
                         ]}
-                        value={unitSize}
-                        onSelect={(value) => setUnitSize(value)}
+                        value={unitySize}
+                        onSelect={(value) => setUnitySize(value)}
                     />
                     <View style={styles.inputSpacing} />
                     <TextInput
                         mode="outlined"
                         placeholder="Unit number"
-                        value={unitNumber}
-                        onChangeText={(text) => setUnitNumber(text)}
+                        inputMode="numeric"
+                        value={unityNumber}
+                        onChangeText={(text) => setUnityNumber(text)}
                     />
                     <View style={styles.inputSpacing} />
                     <Dropdown
@@ -126,10 +187,9 @@ const ServicesScreen = () => {
                         onChangeText={(text) => setComment(text)}
                     />
                     <View style={styles.inputSpacing} />
-                    <TouchableOpacity onPress={() => addNewService()} style={buttonStyles.button}>
+                    <TouchableOpacity onPress={() => createNewService()} style={buttonStyles.button}>
                         <Text style={buttonStyles.buttonText}>Create</Text>
                     </TouchableOpacity>
-
                 </View>
             </CustomButtonSheet>
 
@@ -138,7 +198,7 @@ const ServicesScreen = () => {
                 <View style={styles.form}>
                     <Text style={styles.bottomSheetTitle}>¿Aceptar tarea?</Text>
                     <Text style={styles.bottomSheetText}>Vas a aceptar la tarea y se te asignará</Text>
-                    <TouchableOpacity onPress={() => { handleUserSelectedAction('3') }} style={buttonStyles.button} >
+                    <TouchableOpacity onPress={() => { handleUserSelectedAction('3') }} style={buttonStyles.button}>
                         <Text style={buttonStyles.buttonText}>Confirmar</Text>
                     </TouchableOpacity>
                 </View>
@@ -149,8 +209,8 @@ const ServicesScreen = () => {
                 <View style={styles.form}>
                     <Text style={styles.bottomSheetTitle}>¿Rechazar servicio?</Text>
                     <Text style={styles.bottomSheetText}>Dinos por qué no aceptas la tarea</Text>
-                    <TextInput mode="outlined" numberOfLines={8} value={comment} onChangeText={setComment}></TextInput>
-                    <View style={styles.inputSpacing}></View>
+                    <TextInput mode="outlined" numberOfLines={8} value={comment} onChangeText={setComment} />
+                    <View style={styles.inputSpacing} />
                     <TouchableOpacity onPress={() => { handleUserSelectedAction('4') }} style={buttonStyles.button}>
                         <Text style={buttonStyles.buttonText}>Confirmar</Text>
                     </TouchableOpacity>
@@ -187,7 +247,9 @@ const styles = StyleSheet.create({
     inputSpacing: {
         height: 15,
     },
-
+    timeButton: {
+        borderRadius: 6
+    }
 });
 
 export default ServicesScreen;

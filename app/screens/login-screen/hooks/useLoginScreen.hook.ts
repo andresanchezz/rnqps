@@ -4,18 +4,16 @@ import Toast from 'react-native-toast-message';
 
 import { AuthResponse } from '../../../interfaces/auth/auth';
 import { apiServicesQPS } from '../../../api/services-qps';
-import { LoginScreenNavigationProp } from '../LoginScreen';
-import { useNavigation } from '@react-navigation/native';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '../../../state';
 import { UserById } from '../../../interfaces/user/userById';
 
 const useLoginScreenHook = () => {
 
-  const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { setToken, setUser } = useAuthStore()
+  const { setToken, setUser } = useAuthStore();
   const [username, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
 
   const handleLogin = async () => {
 
@@ -38,26 +36,30 @@ const useLoginScreenHook = () => {
       await SecureStore.setItemAsync('userId', id);
       await SecureStore.setItemAsync('email', email);
 
-      setToken(token)
+      await fetchUserInfo(id, token);
 
-      await fetchUserInfo(id);
+      setToken(token);
 
     } catch (error: any) {
       Sentry.captureMessage(error)
     }
   };
 
-  const fetchUserInfo = async (userId: string) => {
-
+  const fetchUserInfo = async (id: string, token: string) => {
     try {
-      const { data } = await apiServicesQPS.get<UserById>(`/users/${userId}`);
-      setUser(data)
+      const { data } = await apiServicesQPS.get(`/users/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      setUser({ ...data }); 
 
     } catch (error: any) {
-      Sentry.captureMessage(error)
+      console.log('Error fetching user info:', error);
+      Sentry.captureMessage(error);
     }
-
-  }
+  };
 
 
   return {
