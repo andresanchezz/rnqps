@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, StyleSheet, Text, TouchableOpacity, FlatList } from "react-native";
 import { FAB, PaperProvider, TextInput, Button } from "react-native-paper";
 import { colors } from "../../../styles/colors";
 import useServicesInformation from "./hooks/useServicesInformation.hook";
@@ -10,14 +10,21 @@ import CustomButtonSheet from "../../components/shared/bottom-sheet/CustomButton
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import moment from "moment";
 import CardService from "../../components/shared/card-task/CardService";
-import { ScrollView } from "react-native-gesture-handler";
+import { useIsFocused } from '@react-navigation/native';
+import { useTranslation } from "react-i18next";
 
 moment.locale('es');
 
 const ServicesScreen = () => {
-    const [mode, setMode] = useState<'date' | 'time'>('date');
+
+      const { t } = useTranslation();
+
+    const isFocused = useIsFocused();
 
     const {
+        services,
+        user,
+        createNewService,
         schedule,
         setSchedule,
         isScheduleSelected,
@@ -26,75 +33,105 @@ const ServicesScreen = () => {
         setDate,
         isDateSelected,
         setIsDateSelected,
-        services,
-        user,
-        createNewService,
+        comment,
+        setComment,
         unitySize,
         setUnitySize,
         unityNumber,
-        typeId,
-        extraId,
-        communityId,
-        options,
-        comment,
-        setComment,
-        setCommunityId,
-        setExtraId,
-        setTypeId,
         setUnityNumber,
-        acceptBottomSheet,
+        communityId,
+        setCommunityId,
+        typeId,
+        setTypeId,
+        extraId,
+        setExtraId,
+        options,
+        setSelectedService,
         createBottomSheet,
         denyBottomSheet,
-        handleUserSelectedAction,
+        acceptBottomSheet,
         openAcceptSheet,
-        openConfirmSheet,
-        setSelectedService,
         openDenySheet,
-        openCreateServicesSheet
+        handleUserSelectedAction,
+        openCreateServicesSheet,
+        isLoading,
+        isRefreshing,
+        hasMore,
+        refreshServices,
+        loadMoreServices,
+        servicesByStatus
     } = useServicesInformation();
 
-    const onChange = (event: any, selectedDate: Date | undefined) => {
+    useEffect(() => {
+        if (isFocused) {
+            refreshServices();
+        }
+    }, [isFocused]);
+
+    const onChangeDate = (event: any, selectedDate: Date | undefined) => {
         if (selectedDate) {
-            if (mode === 'date') {
-                setDate(selectedDate);
-                setIsDateSelected(true);
-            } else if (mode === 'time') {
-                setSchedule(selectedDate);
-                setisScheduleSelected(true);
-            }
+            setDate(selectedDate);
+            setIsDateSelected(true);
         }
     };
 
-    const showMode = (currentMode: 'date' | 'time') => {
-        setMode(currentMode);
+    const onChangeTime = (event: any, selectedTime: Date | undefined) => {
+        if (selectedTime) {
+            setSchedule(selectedTime);
+            setisScheduleSelected(true);
+        }
+    };
+
+    const showDatePicker = () => {
         DateTimePickerAndroid.open({
-            value: currentMode === 'date' ? date : schedule,
-            onChange,
-            mode: currentMode,
+            value: date,
+            onChange: onChangeDate,
+            mode: 'date',
             is24Hour: true,
             minimumDate: new Date(),
         });
     };
 
+    const showTimePicker = () => {
+        DateTimePickerAndroid.open({
+            value: schedule,
+            onChange: onChangeTime,
+            mode: 'time',
+            is24Hour: true,
+        });
+    };
+
     return (
         <View style={styles.mainContainer}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {services?.data.map((service) => (
+
+            
+            <FlatList
+                data={servicesByStatus.pending}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
                     <CardService
-                        key={service.id}
-                        service={service}
+                        key={item.id}
+                        service={item}
                         role={user?.roleId!}
                         onAccept={user?.roleId === "4" ? () => {
                             openAcceptSheet();
-                            setSelectedService(service);
+                            setSelectedService(item);
                         } : undefined}
                         onDeny={user?.roleId === "4" ? () => {
                             openDenySheet();
-                            setSelectedService(service);
+                            setSelectedService(item);
                         } : undefined}
                     />
-                ))}
-            </ScrollView>
+                )}
+                onEndReached={loadMoreServices}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={() => (
+                    isLoading ? <Text style={styles.loadingText}>{t("loading")}</Text> :
+                    !hasMore ? <Text style={styles.noMoreText}>{t("noMoreServices")}</Text> : null
+                )}
+                refreshing={isRefreshing}
+                onRefresh={refreshServices}
+            />
 
             {user?.roleId === "1" && (
                 <FAB
@@ -105,40 +142,39 @@ const ServicesScreen = () => {
                 />
             )}
 
-            {/*Modal para crear un servicio*/}
+            {/* Modal para crear un servicio */}
             <CustomButtonSheet ref={createBottomSheet} snapPoints={['50', '90']}>
                 <View style={styles.form}>
-                    <Text style={styles.bottomSheetTitle}>Crear un servicio</Text>
+                    <Text style={styles.bottomSheetTitle}>{t('createService')}</Text>
                     <View style={{ height: 15 }}></View>
-                    <Button mode="outlined" onPress={() => showMode('date')} style={styles.timeButton}>
+                    <Button mode="outlined" onPress={showDatePicker} style={styles.timeButton}>
                         <Text style={{ color: colors.dark }}>
                             {isDateSelected
-                                ? `Fecha seleccionada: ${moment(date).format('MMMM D YYYY')}` // Formato: "enero 5 2025"
-                                : 'Seleccionar fecha'}
+                                ? `${t('selectedDate')} ${moment(date).format('MMMM D YYYY')}` // Formato: "enero 5 2025"
+                                : `${t('selectedADate')}`}
                         </Text>
                     </Button>
                     <View style={styles.inputSpacing} />
 
-                    <Button mode="outlined" onPress={() => showMode('time')} style={styles.timeButton}>
+                    <Button mode="outlined" onPress={showTimePicker} style={styles.timeButton}>
                         <Text style={{ color: colors.dark }}>
                             {isScheduleSelected
-                                ? `Hora seleccionada: ${moment(schedule).format('hh:mm A')}` // Formato: "02:30 PM"
-                                : 'Seleccionar hora'}
+                                ? `${t('selectedTime')} ${moment(schedule).format('hh:mm A')}` // Formato: "02:30 PM"
+                                : `${t('selectedATime')}`}
                         </Text>
                     </Button>
                     <View style={styles.inputSpacing} />
-
 
                     <Dropdown
                         mode="outlined"
-                        label="Unit size"
-                        placeholder="Select unit size"
+                        label={t('unitSize')}
+                        placeholder={t('selectUnitSize')}
                         options={[
-                            { label: "1 Bedroom", value: "1 Bedroom" },
-                            { label: "2 Bedroom", value: "2 Bedroom" },
-                            { label: "3 Bedroom", value: "3 Bedroom" },
-                            { label: "4 Bedroom", value: "4 Bedroom" },
-                            { label: "5 Bedroom", value: "5 Bedroom" },
+                            { label: `1 ${t('bedroom')}`, value: "1 Bedroom" },
+                            { label: `2 ${t('bedroom')}`, value: "2 Bedroom" },
+                            { label: `3 ${t('bedroom')}`, value: "3 Bedroom" },
+                            { label: `4 ${t('bedroom')}`, value: "4 Bedroom" },
+                            { label: `5 ${t('bedroom')}`, value: "5 Bedroom" },
                         ]}
                         value={unitySize}
                         onSelect={(value) => setUnitySize(value)}
@@ -146,7 +182,7 @@ const ServicesScreen = () => {
                     <View style={styles.inputSpacing} />
                     <TextInput
                         mode="outlined"
-                        placeholder="Unit number"
+                        placeholder={t('unitNumber')}
                         inputMode="numeric"
                         value={unityNumber}
                         onChangeText={(text) => setUnityNumber(text)}
@@ -154,8 +190,8 @@ const ServicesScreen = () => {
                     <View style={styles.inputSpacing} />
                     <Dropdown
                         mode="outlined"
-                        label="Community"
-                        placeholder="Select community"
+                        label={t('community')}
+                        placeholder={t("selectCommunity")}
                         options={options?.communities}
                         value={communityId}
                         onSelect={(value) => setCommunityId(value)}
@@ -163,8 +199,8 @@ const ServicesScreen = () => {
                     <View style={styles.inputSpacing} />
                     <Dropdown
                         mode="outlined"
-                        label="Type"
-                        placeholder="Select type"
+                        label={t("type")}
+                        placeholder={t("selectType")}
                         options={options?.cleaningTypes}
                         value={typeId}
                         onSelect={(value) => setTypeId(value)}
@@ -173,7 +209,7 @@ const ServicesScreen = () => {
                     <Dropdown
                         mode="outlined"
                         label="Extras"
-                        placeholder="Select extras"
+                        placeholder={t("selectExtras")}
                         options={options?.extras}
                         value={extraId}
                         onSelect={(value) => setExtraId(value)}
@@ -181,14 +217,14 @@ const ServicesScreen = () => {
                     <View style={styles.inputSpacing} />
                     <TextInput
                         mode="outlined"
-                        placeholder="Comment"
+                        placeholder={t("comment")}
                         numberOfLines={4}
                         value={comment}
                         onChangeText={(text) => setComment(text)}
                     />
                     <View style={styles.inputSpacing} />
                     <TouchableOpacity onPress={() => createNewService()} style={buttonStyles.button}>
-                        <Text style={buttonStyles.buttonText}>Create</Text>
+                        <Text style={buttonStyles.buttonText}>{t("create")}</Text>
                     </TouchableOpacity>
                 </View>
             </CustomButtonSheet>
@@ -196,10 +232,10 @@ const ServicesScreen = () => {
             {/* Modal para aceptar un servicio */}
             <CustomButtonSheet ref={acceptBottomSheet} snapPoints={['10%', '25%']}>
                 <View style={styles.form}>
-                    <Text style={styles.bottomSheetTitle}>¿Aceptar tarea?</Text>
-                    <Text style={styles.bottomSheetText}>Vas a aceptar la tarea y se te asignará</Text>
+                    <Text style={styles.bottomSheetTitle}>{t("acceptService")}</Text>
+                    <Text style={styles.bottomSheetText}>{t("textAcceptService")}</Text>
                     <TouchableOpacity onPress={() => { handleUserSelectedAction('3') }} style={buttonStyles.button}>
-                        <Text style={buttonStyles.buttonText}>Confirmar</Text>
+                        <Text style={buttonStyles.buttonText}>{t("confirm")}</Text>
                     </TouchableOpacity>
                 </View>
             </CustomButtonSheet>
@@ -207,12 +243,12 @@ const ServicesScreen = () => {
             {/* Modal para rechazar un servicio */}
             <CustomButtonSheet ref={denyBottomSheet} snapPoints={['10%', '35%']}>
                 <View style={styles.form}>
-                    <Text style={styles.bottomSheetTitle}>¿Rechazar servicio?</Text>
-                    <Text style={styles.bottomSheetText}>Dinos por qué no aceptas la tarea</Text>
+                    <Text style={styles.bottomSheetTitle}>{t("denyService")}</Text>
+                    <Text style={styles.bottomSheetText}>{t("textDenyService")}</Text>
                     <TextInput mode="outlined" numberOfLines={8} value={comment} onChangeText={setComment} />
                     <View style={styles.inputSpacing} />
                     <TouchableOpacity onPress={() => { handleUserSelectedAction('4') }} style={buttonStyles.button}>
-                        <Text style={buttonStyles.buttonText}>Confirmar</Text>
+                        <Text style={buttonStyles.buttonText}>{t("confirm")}</Text>
                     </TouchableOpacity>
                 </View>
             </CustomButtonSheet>
@@ -249,6 +285,16 @@ const styles = StyleSheet.create({
     },
     timeButton: {
         borderRadius: 6
+    },
+    loadingText: {
+        textAlign: 'center',
+        marginVertical: 10,
+        color: colors.dark,
+    },
+    noMoreText: {
+        textAlign: 'center',
+        marginVertical: 10,
+        color: colors.dark,
     }
 });
 

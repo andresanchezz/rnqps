@@ -27,7 +27,7 @@ const CustomButtonSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
                 <BottomSheetBackdrop
                     {...props}
                     disappearsOnIndex={-1}
-                    appearsOnIndex={0}
+                    appearsOnIndex={1}
                 />
             ),
             []
@@ -37,6 +37,7 @@ const CustomButtonSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
             <CustomBottomSheet
                 ref={ref} 
                 index={-1} 
+                 
                 snapPoints={snapPoints} 
                 onChange={handleSheetChanges} 
                 enablePanDownToClose={true} 

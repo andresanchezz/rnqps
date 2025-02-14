@@ -8,25 +8,30 @@ import { Service } from "../../interfaces/services/services.interface";
 import CustomButtonSheet from "../../components/shared/bottom-sheet/CustomButtonSheet";
 import { buttonStyles } from "../../../styles/styles";
 import { typography } from "../../../styles/typography";
+import { useTranslation } from "react-i18next";
 
 const HistoryScreen = () => {
 
+    const {t} = useTranslation()
+
     const {
         isLoading,
-        services,
+        servicesByStatus,
         user,
         openConfirmSheet,
         confirmBottomSheet
     } = useServicesInformation();
 
 
-    const pendingServices = services?.data.filter((service: Service) => service.statusId === "3");
-    const completedServices = services?.data.filter((service: Service) => service.statusId === "4");
-
+    const [index, setIndex] = useState(0);
+    const [routes] = useState([
+        { key: "pending", title: `${t("pending")}` },
+        { key: "completed", title: `${t("completed")}` },
+    ]);
 
     const PendingTab = () => (
         <View style={styles.tabContainer}>
-            {pendingServices?.map((service) => (
+            {servicesByStatus.approved?.map((service) => (
                 <CardService
                     key={service.id}
                     service={service}
@@ -39,7 +44,7 @@ const HistoryScreen = () => {
 
     const CompletedTab = () => (
         <View style={styles.tabContainer}>
-            {completedServices?.map((service) => (
+            {servicesByStatus.completed?.map((service) => (
                 <CardService
                     key={service.id}
                     service={service}
@@ -50,11 +55,6 @@ const HistoryScreen = () => {
         </View>
     );
 
-    const [index, setIndex] = useState(0);
-    const [routes] = useState([
-        { key: "pending", title: "Pendientes" },
-        { key: "completed", title: "Completados" },
-    ]);
 
     const renderScene = SceneMap({
         pending: PendingTab,

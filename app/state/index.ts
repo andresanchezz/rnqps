@@ -15,6 +15,7 @@ interface HomeStore {
     setIsLoading(isLoading: boolean): void;
 }
 
+
 const useAuthStore = create<AuthStore>((set) => ({
     token: "",
     role: "",
@@ -31,5 +32,6 @@ const useHomeStore = create<HomeStore>((set) => ({
 
 export {
     useAuthStore,
-    useHomeStore
+    useHomeStore,
+
 };

@@ -1,0 +1,70 @@
+{
+  "welcome": "Bienvenido",
+
+  "created": "Creado",
+  "pending": "Pendiente",
+  "approved": "Aprobado",
+  "rejected": "Rechazado",
+  "completed": "Completado",
+  "finished": "Finalizado",
+
+  "loading": "Cargando",
+
+  "noMoreServices": "No hay más servicios",
+  "createService": "Crear un servicio",
+  "selectADate": "Selecciona una fecha",
+  "selectedDate": "La fecha seleccionada es",
+  "selectATime": "Selecciona una hora",
+  "selectedTime": "La hora seleccionada es",
+  "unitSize": "Tamaño de la unidad",
+  "selectUnitSize": "Selecciona el tamaño de la unidad",
+  "bedroom": "Habitación",
+  "unitNumber": "Número de unidad",
+  "community": "Comunidad",
+  "selectCommunity": "Selecciona una comunidad",
+  "type": "Tipo",
+  "selectType": "Selecciona un tipo",
+  "selectExtras": "Selecciona extras",
+  "comment": "Comentario",
+
+  "acceptService": "Aceptar servicio",
+  "textAcceptService": "Estás a punto de aceptar el servicio y será asignado a ti",
+
+  "denyService": "Rechazar servicio",
+  "textDenyService": "Dinos por qué vas a rechazar el servicio",
+
+  "create": "Crear",
+  "confirm": "Confirmar",
+
+  "spanish": "Español",
+  "english": "Inglés",
+
+  "signIn": "Iniciar sesión",
+  "logOut": "Cerrar sesión",
+
+  "email": "Correo electrónico",
+  "password": "Contraseña",
+
+  "services": "Servicios",
+  "profile": "Perfil",
+  "history": "Historial",
+
+  "date": "Fecha",
+  "schedule": "Horario",
+
+  "userComment": "Comentario del usuario",
+
+  "status": "Estado",
+  "createdAt": "Creado el",
+  "updatedAt": "Actualizado el",
+
+  "communityName": "Nombre de la comunidad",
+  "user": "Usuario",
+
+  "company": "Empresa",
+  "description": "Descripción",
+  "cleaningType": "Tipo de limpieza",
+  "price": "Precio",
+  "commission": "Comisión",
+  "statusName": "Nombre del estado"
+}

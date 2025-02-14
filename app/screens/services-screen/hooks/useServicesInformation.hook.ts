@@ -14,28 +14,53 @@ interface Option {
     value: string;
 }
 
-const useServicesInformation = () => {
+const STATUS = {
+    CREATED: '1',
+    PENDING: '2',
+    APPROVED: '3',
+    REJECTED: '4',
+    COMPLETED: '5',
+    FINISHED: '6',
+};
 
+interface ServicesByStatus {
+    all: Services;
+    created: Service[];
+    pending: Service[];
+    approved: Service[];
+    rejected: Service[];
+    completed: Service[];
+    finished: Service[];
+}
+
+const useServicesInformation = () => {
     const { user } = useAuthStore();
 
-    const [services, setServices] = useState<Services>();
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [servicesByStatus, setServicesByStatus] = useState<ServicesByStatus>({
+        all: { data: [], meta: { hasNextPage: false, page: 0, take: 0, totalCount: 0, pageCount: 0, hasPreviousPage: false } },
+        created: [],
+        pending: [],
+        approved: [],
+        rejected: [],
+        completed: [],
+        finished: [],
+    });
 
+    const [currentPage, setCurrentPage] = useState<number>(1);
     const [date, setDate] = useState(moment().toDate());
     const [schedule, setSchedule] = useState(moment().toDate());
     const [isDateSelected, setIsDateSelected] = useState<boolean>(false);
     const [isScheduleSelected, setisScheduleSelected] = useState<boolean>(false);
-
     const [unitySize, setUnitySize] = useState<string>();
     const [unityNumber, setUnityNumber] = useState<string>();
-
     const [comment, setComment] = useState<string>();
-
     const [communityId, setCommunityId] = useState<string>();
     const [typeId, setTypeId] = useState<string>();
     const [extraId, setExtraId] = useState<string>();
-
     const [selectedService, setSelectedService] = useState<Service>();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+    const [hasMore, setHasMore] = useState<boolean>(true);
 
     const [options, setOptions] = useState<{ communities: Option[], extras: Option[], cleaningTypes: Option[] }>({
         communities: [],
@@ -48,43 +73,90 @@ const useServicesInformation = () => {
     const denyBottomSheet = useRef<any>(null);
     const confirmBottomSheet = useRef<any>(null);
 
-    const authStore = useAuthStore();
-
-    const fetchServices = async () => {
-        SecureStorage.deleteItemAsync('userToken')
-
-        let data: Services;
-        const { path, method } = pathByRole();
+    const fetchServices = async (page: number, isRefreshing: boolean = false) => {
+        SecureStorage.deleteItemAsync('userToken');
+        if (isLoading) return;
+        setIsLoading(true);
 
         try {
+            const { path, method } = pathByRole();
+            let data: Services;
 
-            if (path === '/services/by-communities') {
-                data = (await apiServicesQPS.post(`${path}`)).data;
+            if (method === 'GET') {
+                data = (await apiServicesQPS.get(`${path}?page=${page}`)).data;
             } else {
-                if (method === 'GET') {
-                    data = (await apiServicesQPS.get(`${path}`)).data;
-
-                } else {
-                    data = (await apiServicesQPS.post(`${path}`)).data;
-                }
+                data = (await apiServicesQPS.post(`${path}?page=${page}`)).data;
             }
 
-            setServices(data);
-        } catch (error) {
-            console.log('Error en la petición', error);
-        }finally{
-            console.log('PATH', path);
+            const classifiedServices: Record<"created" | "pending" | "approved" | "rejected" | "completed" | "finished",
+                Service[]> = {
+                created: [],
+                pending: [],
+                approved: [],
+                rejected: [],
+                completed: [],
+                finished: [],
+            };
+
+            data.data.forEach((service) => {
+                switch (service.statusId) {
+                    case STATUS.CREATED:
+                        classifiedServices.created.push(service);
+                        break;
+                    case STATUS.PENDING:
+                        classifiedServices.pending.push(service);
+                        break;
+                    case STATUS.APPROVED:
+                        classifiedServices.approved.push(service);
+                        break;
+                    case STATUS.REJECTED:
+                        classifiedServices.rejected.push(service);
+                        break;
+                    case STATUS.COMPLETED:
+                        classifiedServices.completed.push(service);
+                        break;
+                    case STATUS.FINISHED:
+                        classifiedServices.finished.push(service);
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            if (isRefreshing) {
+                setServicesByStatus({
+                    all: data,
+                    ...classifiedServices,
+                });
+            } else {
+                setServicesByStatus((prevServices) => ({
+                    all: {
+                        ...data,
+                        data: [...(prevServices.all.data || []), ...data.data],
+                    },
+                    created: [...prevServices.created, ...classifiedServices.created],
+                    pending: [...prevServices.pending, ...classifiedServices.pending],
+                    approved: [...prevServices.approved, ...classifiedServices.approved],
+                    rejected: [...prevServices.rejected, ...classifiedServices.rejected],
+                    completed: [...prevServices.completed, ...classifiedServices.completed],
+                    finished: [...prevServices.finished, ...classifiedServices.finished],
+                }));
+            }
+
+            setHasMore(data.meta.hasNextPage);
+        } catch (error: any) {
+            Sentry.captureMessage(error);
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
         }
-
-
     };
 
     const pathByRole = (): { path: string, method: string } => {
-
         switch (user!.roleId) {
             case "1":
                 return {
-                    path: `/services?page=${currentPage}`,
+                    path: `/services`,
                     method: 'GET'
                 };
             case "3":
@@ -99,11 +171,23 @@ const useServicesInformation = () => {
                 };
             default:
                 return {
-                    path: `/services?page=${currentPage}`,
+                    path: `/services`,
                     method: 'GET'
                 };
         }
+    };
 
+    const refreshServices = async () => {
+        setIsRefreshing(true);
+        setCurrentPage(1);
+        await fetchServices(1, true);
+    };
+
+    const loadMoreServices = async () => {
+        if (!isLoading && hasMore) {
+            setCurrentPage((prevPage) => prevPage + 1);
+            await fetchServices(currentPage + 1);
+        }
     };
 
     const openCreateServicesSheet = () => {
@@ -179,28 +263,50 @@ const useServicesInformation = () => {
             extraId,
         };
 
-        await apiServicesQPS.post('/services', newService);
+        try {
+            const { data } = await apiServicesQPS.post('/services', newService);
+            console.log(data);
+        } catch (error: any) {
+            console.log(error);
+            Sentry.captureMessage(error);
+        }
         createBottomSheet.current?.close();
     };
 
     const getExtrasList = async () => {
-        const { data } = await apiServicesQPS.get<Extras>('/extras');
+        let data;
+        try {
+            data = (await apiServicesQPS.get<Extras>('/extras')).data;
+        } catch (error: any) {
+            console.log(error);
+            Sentry.captureMessage(error);
+        }
         return data;
     };
 
     const getTypesList = async () => {
-        const { data } = await apiServicesQPS.get<CleaningTypes>('/types');
+        let data;
+        try {
+            data = (await apiServicesQPS.get<CleaningTypes>('/types')).data;
+        } catch (error: any) {
+            Sentry.captureMessage(error);
+        }
         return data;
     };
 
     const getCommunitiesList = async () => {
-        const userId = await SecureStorage.getItemAsync('userId');
-        const { data } = await apiServicesQPS.get<CommunitiesByManager[]>(`/communities/by-manager/${userId}`);
+        let data;
+        try {
+            data = (await apiServicesQPS.get<CommunitiesByManager[]>(`/communities/by-manager/2`)).data;
+        } catch (error: any) {
+            console.log(error);
+            Sentry.captureMessage(error);
+        }
         return data;
     };
 
     const fetchDataToCreateModal = async () => {
-        /* const typesList = await getTypesList();
+        const typesList = await getTypesList();
         const communitiesList = await getCommunitiesList();
         const extrasList = await getExtrasList();
 
@@ -219,16 +325,17 @@ const useServicesInformation = () => {
             value: extra.id,
         }));
 
-        setOptions({ communities: communityOptions, extras: extrasOptions, cleaningTypes: cleaningTypeOptions }); */
+        setOptions({ communities: communityOptions, extras: extrasOptions, cleaningTypes: cleaningTypeOptions });
     };
 
     useEffect(() => {
-        fetchServices();
-
-    }, []);
+        fetchServices(1);
+        fetchDataToCreateModal();
+    }, [currentPage]);
 
     return {
-        services,
+        services: servicesByStatus.all,
+        servicesByStatus,
         user,
         createNewService,
         schedule,
@@ -261,7 +368,12 @@ const useServicesInformation = () => {
         openConfirmSheet,
         openDenySheet,
         handleUserSelectedAction,
-        openCreateServicesSheet
+        openCreateServicesSheet,
+        isLoading,
+        isRefreshing,
+        hasMore,
+        refreshServices,
+        loadMoreServices,
     };
 };
 

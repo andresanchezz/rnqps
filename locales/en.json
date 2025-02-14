@@ -1,0 +1,71 @@
+{
+  "welcome": "Welcome back",
+
+  "created": "Created",
+  "pending": "Pending",
+  "approved": "Approved",
+  "rejected": "Rejected",
+  "completed": "Completed",
+  "finished": "Finished",
+
+  "loading": "Loading...",
+
+  "noMoreServices": "There are no more services",
+  "createService": "Create a service",
+  "selectADate": "Select a date",
+  "selectedDate": "The selected date is",
+  "selectATime": "Select a time",
+  "selectedTime": "The selected time is",
+  "unitSize": "Unit size",
+  "selectUnitSize": "Select unit size",
+  "bedroom": "Bedroom",
+  "unitNumber": "Unit number",
+  "community": "Community",
+  "selectCommunity": "Select a community",
+  "type": "Type",
+  "selectType": "Select a type",
+  "selectExtras": "Select extras",
+  "comment": "Comment",
+
+  "acceptService": "Accept service",
+  "textAcceptService": "You are about to accept the service, and it will be assigned to you",
+
+  "denyService": "Deny service",
+  "textDenyService": "Tell us why you are going to deny the service",
+
+  "create": "Create",
+  "confirm": "Confirm",
+
+  "spanish": "Spanish",
+  "english": "English",
+
+  "signIn": "Sign in",
+  "logOut": "Log out",
+
+  "email": "Email",
+  "password": "Password",
+
+  "services": "Services",
+  "profile": "Profile",
+  "history": "History",
+
+  "date": "Date",
+  "schedule": "Schedule",
+
+  "userComment": "User comment",
+  "unitySize": "Unit size",
+
+  "status": "Status",
+  "createdAt": "Created at",
+  "updatedAt": "Updated at",
+
+  "communityName": "Community name",
+  "user": "User",
+
+  "company": "Company",
+  "description": "Description",
+  "cleaningType": "Cleaning type",
+  "price": "Price",
+  "commission": "Commission",
+  "statusName": "Status name"
+}

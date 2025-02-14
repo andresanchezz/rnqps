@@ -8,10 +8,10 @@ import { typography } from "../../../../styles/typography";
 interface CardServiceProps {
     service: Service;
     role: string;
-    onAccept?: () => void; // Prop opcional
-    onDeny?: () => void; // Prop opcional
-    onConfirm?: () => void; // Nuevo botón
-    hideButtons?: boolean; // Prop para ocultar botones
+    onAccept?: () => void; 
+    onDeny?: () => void; 
+    onConfirm?: () => void; 
+    hideButtons?: boolean; 
 }
 
 const CardService: React.FC<CardServiceProps> = ({
@@ -20,11 +20,10 @@ const CardService: React.FC<CardServiceProps> = ({
     onAccept,
     onDeny,
     onConfirm,
-    hideButtons = false // Valor por defecto
+    hideButtons = false 
 }) => {
     const { toggleExpand, animatedHeight, isExpanded } = useCardBehaviour(role);
 
-    // Determina si los botones deben mostrarse
     const showButtons = !hideButtons && (onAccept || onDeny || onConfirm);
 
     return (
@@ -45,9 +44,9 @@ const CardService: React.FC<CardServiceProps> = ({
                         <View style={styles.row}>
                             <Avatar.Icon size={40} icon="file" style={styles.roundedAvatar} />
                             <View style={styles.textContainer}>
-                                <Text style={styles.title}>Tarea #{service.id}</Text>
+                                <Text style={styles.title}>{service.type.cleaningType}</Text>
                                 <Text style={styles.description}>Unidad: {service.unitNumber}</Text>
-                                <Text style={styles.description}>Tamaño: {service.unitySize}</Text>
+                                <Text style={styles.description}>{service.unitySize}</Text>
                             </View>
                         </View>
                     </TouchableOpacity>
@@ -92,13 +91,13 @@ const CardService: React.FC<CardServiceProps> = ({
                             },
                         ]}
                     >
-                        <Text style={typography.bodyLarge.bold}>Detalles de la tarea <Text>{service.id}</Text></Text>
                         <Text style={typography.bodyLarge.bold}>Comentario: <Text>{service.comment || "N/A"}</Text></Text>
                         <Text style={typography.bodyLarge.bold}>Horario: <Text>{service.schedule || "N/A"}</Text></Text>
                         <Text style={typography.bodyLarge.bold}>Comunidad: <Text>{service.community?.communityName || "N/A"}</Text></Text>
-                        <Text style={typography.bodyLarge.bold}>Tipo: <Text>{service.type?.cleaningType || "N/A"}</Text></Text>
                         <Text style={typography.bodyLarge.bold}>Estado: <Text>{service.status?.statusName || "N/A"}</Text></Text>
                         <Text style={typography.bodyLarge.bold}>Usuario: <Text>{service.userId || "N/A"}</Text></Text>
+                        <Text style={typography.bodyLarge.bold}>Id tarea: <Text>{service.id}</Text></Text>
+                        
                     </Animated.View>
                 )}
             </Animated.View>

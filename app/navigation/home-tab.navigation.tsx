@@ -4,12 +4,15 @@ import { colors } from "../../styles/colors";
 import ServicesScreen from '../screens/services-screen/ServicesScreen';
 import HistoryScreen from '../screens/history-screen/HistoryScreen';
 import { ProfileScreen } from '../screens/profile-screen/ProfileScreen';
+import { useTranslation } from 'react-i18next';
 
 
 
 const Tab = createBottomTabNavigator();
 
 const HomeTabNavigation = () => {
+
+    const {t} = useTranslation();
 
     return (
         <Tab.Navigator
@@ -25,9 +28,9 @@ const HomeTabNavigation = () => {
                 },
             })}
         >
-            <Tab.Screen options={{ title: 'Services' }} name="ServicesScreen" component={ServicesScreen} />
-            <Tab.Screen options={{ title: 'History' }} name="HistoryScreen" component={HistoryScreen} />
-            <Tab.Screen options={{ title: 'Profile' }} name="ProfileScreen" component={ProfileScreen} />
+            <Tab.Screen options={{ title: `${t("services")}` }} name="ServicesScreen" component={ServicesScreen} />
+            <Tab.Screen options={{ title: `${t("history")}` }} name="HistoryScreen" component={HistoryScreen} />
+            <Tab.Screen options={{ title: `${t("profile")}` }} name="ProfileScreen" component={ProfileScreen} />
         </Tab.Navigator>
     )
 };

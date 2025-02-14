@@ -6,10 +6,13 @@ import { colors } from '../../../styles/colors'
 import { typography } from '../../../styles/typography'
 import useProfile from './hooks/useProfile.hook'
 import { useAuthStore } from '../../state'
+import { useTranslation } from 'react-i18next'
 
 export const ProfileScreen = () => {
 
-  const { signOut } = useProfile();
+  const { t } = useTranslation();
+
+  const { signOut, changeLanguage } = useProfile();
   const userData = useAuthStore().user;
 
   return (
@@ -22,6 +25,16 @@ export const ProfileScreen = () => {
 
         <Text>{userData?.email}</Text>
 
+
+    <Text>{t("welcome")}</Text>
+
+        <TouchableOpacity style={[buttonStyles.button, styles.buttonWidth]} onPress={()=>changeLanguage('es')}>
+          <Text style={buttonStyles.buttonText}>Español</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[buttonStyles.button, styles.buttonWidth]} onPress={()=>changeLanguage('en')}>
+          <Text style={buttonStyles.buttonText}>Inglés</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={[buttonStyles.button, styles.buttonWidth]} onPress={signOut}>
           <Text style={buttonStyles.buttonText}>Logout</Text>

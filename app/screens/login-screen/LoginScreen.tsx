@@ -10,11 +10,13 @@ import { RootParamList } from '../../navigation/kickoff-stack.navigation';
 import { typography } from '../../../styles/typography';
 import { buttonStyles } from '../../../styles/styles';
 import { colors } from '../../../styles/colors';
+import { useTranslation } from 'react-i18next';
 
 export type LoginScreenNavigationProp = StackNavigationProp<RootParamList, 'LoginScreen'>;
 
 const LoginScreen = () => {
 
+  const { t } = useTranslation();
 
   const { username, setEmail, password, setPassword, handleLogin } = useLoginScreenHook();
 
@@ -33,11 +35,11 @@ const LoginScreen = () => {
 
         <View style={{ flex: 1, justifyContent: 'space-evenly' }}>
           <Text style={{ textAlign: 'center', ...typography.headingLarge.black, color: colors.primary }}>
-            Welcome back
+          {t('welcome')}
           </Text>
           <View>
             <TextInput
-              label="Email"
+              label={t('email')}
               value={username}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -46,7 +48,7 @@ const LoginScreen = () => {
             />
             <View style={{ height: 25 }}></View>
             <TextInput
-              label="Password"
+              label={t('password')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -54,7 +56,7 @@ const LoginScreen = () => {
             />
           </View>
           <TouchableOpacity style={buttonStyles.button} onPress={handleLogin}>
-            <Text style={buttonStyles.buttonText}>Sign in</Text>
+            <Text style={buttonStyles.buttonText}>{t('signIn')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
