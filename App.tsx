@@ -5,6 +5,7 @@ import React from 'react'
 import KickoffStackNavigation from './app/navigation/kickoff-stack.navigation'
 import { I18nextProvider } from 'react-i18next'
 import i18n from './i18n/i18next'
+import Toast from 'react-native-toast-message'
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
       <NavigationContainer>
         <KickoffStackNavigation />
       </NavigationContainer>
+      <Toast />
     </SafeAreaView>
     </I18nextProvider>
   )

@@ -3,11 +3,13 @@ import * as Sentry from "@sentry/react-native";
 import { useEffect, useRef, useState } from 'react';
 import { Service, Services } from '../../../interfaces/services/services.interface';
 import { apiServicesQPS } from '../../../api/services-qps';
-import { useAuthStore } from '../../../state';
 import moment from 'moment';
 import { CommunitiesByManager } from '../../../interfaces/services/communities';
 import { Extras } from '../../../interfaces/services/extras';
 import { CleaningTypes } from '../../../interfaces/services/types';
+import Toast from 'react-native-toast-message';
+import * as SecureStore from 'expo-secure-store';
+import { UserById } from '../../../interfaces/user/userById';
 
 interface Option {
     label: string;
@@ -34,7 +36,9 @@ interface ServicesByStatus {
 }
 
 const useServicesInformation = () => {
-    const { user } = useAuthStore();
+
+    const userString = SecureStore.getItem('userData');
+    const user = userString ? JSON.parse(userString) : null;
 
     const [servicesByStatus, setServicesByStatus] = useState<ServicesByStatus>({
         all: { data: [], meta: { hasNextPage: false, page: 0, take: 0, totalCount: 0, pageCount: 0, hasPreviousPage: false } },
@@ -45,6 +49,10 @@ const useServicesInformation = () => {
         completed: [],
         finished: [],
     });
+
+
+    const [isFetchingCommunities, setIsFetchingCommunities] = useState<boolean>(false);
+    const [communitiesError, setCommunitiesError] = useState<boolean>(false);
 
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [date, setDate] = useState(moment().toDate());
@@ -73,19 +81,33 @@ const useServicesInformation = () => {
     const denyBottomSheet = useRef<any>(null);
     const confirmBottomSheet = useRef<any>(null);
 
+
     const fetchServices = async (page: number, isRefreshing: boolean = false) => {
-        SecureStorage.deleteItemAsync('userToken');
-        if (isLoading) return;
+        if (isLoading) return; 
         setIsLoading(true);
 
         try {
-            const { path, method } = pathByRole();
+            const { path } = pathByRole();
             let data: Services;
 
-            if (method === 'GET') {
-                data = (await apiServicesQPS.get(`${path}?page=${page}`)).data;
+            if (user?.roleId === "4") {
+                data = (await apiServicesQPS.post(`${path}/${user.id}?page=${page}`)).data;
+            } else if (user?.roleId === "3") {
+                const communitiesResponse = await apiServicesQPS.get<CommunitiesByManager[]>(`/communities/by-manager/${user.id}`);
+                const communities = communitiesResponse.data;
+
+                const communityIds = communities.map((community) => community.id);
+
+                if (communityIds.length > 0) {
+                    const requestBody = {
+                        communities: communityIds,
+                    };
+                    data = (await apiServicesQPS.post(path, requestBody)).data;
+                } else {
+                    data = { data: [], meta: { hasNextPage: false, page: 0, take: 0, totalCount: 0, pageCount: 0, hasPreviousPage: false } };
+                }
             } else {
-                data = (await apiServicesQPS.post(`${path}?page=${page}`)).data;
+                data = (await apiServicesQPS.get(`${path}?page=${page}`)).data;
             }
 
             const classifiedServices: Record<"created" | "pending" | "approved" | "rejected" | "completed" | "finished",
@@ -145,10 +167,25 @@ const useServicesInformation = () => {
 
             setHasMore(data.meta.hasNextPage);
         } catch (error: any) {
+            console.error("Error fetching services:", error);
             Sentry.captureMessage(error);
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
+        }
+    };
+
+    const refreshServices = async () => {
+        if (isRefreshing) return;
+        setIsRefreshing(true);
+        setCurrentPage(1);
+        await fetchServices(1, true);
+    };
+
+    const loadMoreServices = async () => {
+        if (!isLoading && hasMore) {
+            setCurrentPage((prevPage) => prevPage + 1);
+            await fetchServices(currentPage + 1);
         }
     };
 
@@ -161,12 +198,12 @@ const useServicesInformation = () => {
                 };
             case "3":
                 return {
-                    path: '/services/by-communities',
+                    path: `/services/by-communities`,
                     method: 'POST'
                 };
             case "4":
                 return {
-                    path: `/services/by-cleaner/${user?.id}`,
+                    path: `/services/by-cleaner`,
                     method: 'POST'
                 };
             default:
@@ -177,18 +214,6 @@ const useServicesInformation = () => {
         }
     };
 
-    const refreshServices = async () => {
-        setIsRefreshing(true);
-        setCurrentPage(1);
-        await fetchServices(1, true);
-    };
-
-    const loadMoreServices = async () => {
-        if (!isLoading && hasMore) {
-            setCurrentPage((prevPage) => prevPage + 1);
-            await fetchServices(currentPage + 1);
-        }
-    };
 
     const openCreateServicesSheet = () => {
         createBottomSheet.current?.expand();
@@ -206,24 +231,39 @@ const useServicesInformation = () => {
         confirmBottomSheet.current?.expand();
     };
 
-    const handleUserSelectedAction = async (selectedStatus: string) => {
+    const handleUserSelectedAction = async (newStatus: string) => {
         if (!selectedService) {
             return;
         }
 
-        if (selectedStatus === "5") {
+        if (newStatus === "5") {
             const now = moment();
-            const selectedDateTime = moment(selectedService.date).set({
-                hour: moment(selectedService.schedule).hour(),
-                minute: moment(selectedService.schedule).minute(),
-            });
+            
+            const selectedDate = moment(selectedService.date, 'YYYY-MM-DD');
+            
+            const scheduleTime = moment(selectedService.schedule, 'HH:mm');
 
+            const selectedDateTime = selectedDate.set({
+                hour: scheduleTime.hour(),
+                minute: scheduleTime.minute()
+            });
+        
             if (now.isBefore(selectedDateTime)) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error en la fecha',
+                    text2: 'No puedes aceptar antes de la fecha de realización'
+                });
                 return;
             }
         }
 
-        if (selectedStatus === "4" && !comment) {
+        if (newStatus === "4" && !comment) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error en el comentario',
+                text2: 'No puedes rechazar sin un motivo'
+            });
             return;
         }
 
@@ -231,22 +271,79 @@ const useServicesInformation = () => {
             date: selectedService.date,
             schedule: selectedService.schedule,
             comment: selectedService.comment,
-            userComment: selectedStatus === "4" ? comment : selectedService.userComment,
+            userComment: newStatus === "4" ? comment : selectedService.userComment,
             unitySize: selectedService.unitySize,
             unitNumber: selectedService.unitNumber,
             communityId: selectedService.communityId,
             typeId: selectedService.typeId,
-            statusId: selectedStatus,
+            statusId: newStatus,
             userId: selectedService.userId,
         };
 
         try {
             await apiServicesQPS.patch(`/services/${selectedService.id}`, updatedData);
+
+            updateServiceStatusLocally(selectedService.id, newStatus);
+
             acceptBottomSheet.current?.close();
             denyBottomSheet.current?.close();
+            confirmBottomSheet.current?.close();
         } catch (error) {
+            console.log(error);
             Sentry.captureException(error);
         }
+    };
+
+    const updateServiceStatusLocally = (serviceId: string, newStatus: string) => {
+        setServicesByStatus((prev) => {
+            const updatedServices = { ...prev };
+
+            const findAndRemoveService = (statusKey: keyof ServicesByStatus) => {
+               
+                const servicesArray = updatedServices[statusKey] as Service[];
+                const index = servicesArray.findIndex((s) => s.id === serviceId);
+                if (index !== -1) {
+                    const [service] = servicesArray.splice(index, 1);
+                    return service;
+                }
+                return null;
+            };
+            const service =
+                findAndRemoveService("created") ||
+                findAndRemoveService("pending") ||
+                findAndRemoveService("approved") ||
+                findAndRemoveService("rejected") ||
+                findAndRemoveService("completed") ||
+                findAndRemoveService("finished");
+
+            if (service) {
+                service.statusId = newStatus;
+                switch (newStatus) {
+                    case STATUS.CREATED:
+                        updatedServices.created.push(service);
+                        break;
+                    case STATUS.PENDING:
+                        updatedServices.pending.push(service);
+                        break;
+                    case STATUS.APPROVED:
+                        updatedServices.approved.push(service);
+                        break;
+                    case STATUS.REJECTED:
+                        updatedServices.rejected.push(service);
+                        break;
+                    case STATUS.COMPLETED:
+                        updatedServices.completed.push(service);
+                        break;
+                    case STATUS.FINISHED:
+                        updatedServices.finished.push(service);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return updatedServices;
+        });
     };
 
     const createNewService = async () => {
@@ -294,15 +391,40 @@ const useServicesInformation = () => {
         return data;
     };
 
-    const getCommunitiesList = async () => {
-        let data;
+    const getCommunitiesList = async (): Promise<CommunitiesByManager[]> => {
+        if (isFetchingCommunities || communitiesError) return []; // Evitar llamadas repetidas
+        setIsFetchingCommunities(true); // Marcar como en proceso
+        setCommunitiesError(false); // Resetear el estado de error
+
         try {
-            data = (await apiServicesQPS.get<CommunitiesByManager[]>(`/communities/by-manager/2`)).data;
+            const response = await apiServicesQPS.get<CommunitiesByManager[]>(`/communities/by-manager/${user?.id}`);
+
+            // Verificar si la respuesta es un error 404
+            if (response.status === 404) {
+                console.warn("No se encontraron comunidades para el manager:", user?.id);
+                return []; // Retornar un array vacío si no hay comunidades
+            }
+
+            // Verificar si la respuesta tiene datos
+            if (response.data && Array.isArray(response.data)) {
+                return response.data; // Retornar los datos si todo está bien
+            } else {
+                console.warn("La respuesta no contiene un array de comunidades:", response.data);
+                return []; // Retornar un array vacío si no hay datos válidos
+            }
         } catch (error: any) {
-            console.log(error);
+            // Capturar el error en Sentry y loguearlo en la consola
             Sentry.captureMessage(error);
+            console.error("Error fetching communities:", error);
+
+            // Marcar que hubo un error
+            setCommunitiesError(true);
+
+            // Retornar un array vacío en caso de error
+            return [];
+        } finally {
+            setIsFetchingCommunities(false); // Marcar como finalizado
         }
-        return data;
     };
 
     const fetchDataToCreateModal = async () => {
@@ -315,10 +437,12 @@ const useServicesInformation = () => {
             value: type.id,
         }));
 
-        const communityOptions: Option[] = communitiesList!.map((community) => ({
-            label: community.communityName,
-            value: community.id,
-        }));
+        const communityOptions: Option[] = communitiesList.length > 0
+            ? communitiesList.map((community) => ({
+                label: community.communityName,
+                value: community.id,
+            }))
+            : [{ label: "No related communities", value: "" }];
 
         const extrasOptions: Option[] = extrasList!.data.map((extra) => ({
             label: extra.item,
@@ -330,8 +454,10 @@ const useServicesInformation = () => {
 
     useEffect(() => {
         fetchServices(1);
-        fetchDataToCreateModal();
-    }, [currentPage]);
+        if (user?.roleId !== "4") {
+            fetchDataToCreateModal();
+        } 
+    },[]);
 
     return {
         services: servicesByStatus.all,
@@ -374,6 +500,7 @@ const useServicesInformation = () => {
         hasMore,
         refreshServices,
         loadMoreServices,
+        
     };
 };
 

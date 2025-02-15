@@ -2,17 +2,19 @@ import React, { useRef, useState } from 'react';
 import { Animated, Easing } from 'react-native';
 import { Roles } from '../../../../interfaces/roles/roles.interface';
 
-const useCardBehaviour = (role: string) => {
+const useCardBehaviour = () => {
     
     const animatedHeight = useRef(new Animated.Value(0)).current;
     const [isExpanded, setIsExpanded] = useState(false);
 
-
-
-    const getRoleKey = (role: string): keyof typeof Roles | undefined => {
-        return Object.keys(Roles).find((key) => Roles[key as keyof typeof Roles] === role) as keyof typeof Roles;
-    };
-
+    /* const statusColors: Record<string, string> = {
+        CREATED: "#3498db",
+        PENDING: "#f1c40f",
+        APPROVED: "#2ecc71",
+        REJECTED: "#e74c3c",
+        COMPLETED: "#9b59b6",
+        FINISHED: "#95a5a6",
+    }; */
 
     /* const allowedActions = {
         [Roles.SUPER_ADMIN]: {

@@ -41,7 +41,14 @@ const useLoginScreenHook = () => {
       setToken(token);
 
     } catch (error: any) {
-      Sentry.captureMessage(error)
+      
+      Toast.show({
+        type: 'error',
+        text1: error.response.data.error,
+        text2: error.response.data.message
+      })
+
+       Sentry.captureMessage(error) 
     }
   };
 
@@ -53,7 +60,7 @@ const useLoginScreenHook = () => {
         }
       });
 
-      setUser({ ...data }); 
+      SecureStore.setItem('userData', JSON.stringify(data));
 
     } catch (error: any) {
       console.log('Error fetching user info:', error);

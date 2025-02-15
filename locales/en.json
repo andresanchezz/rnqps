@@ -33,6 +33,9 @@
   "denyService": "Deny service",
   "textDenyService": "Tell us why you are going to deny the service",
 
+  "confirmService": "Confirma service",
+  "textConfirmService": "You are about to confirm the service. Must be completed.",
+
   "create": "Create",
   "confirm": "Confirm",
 
@@ -55,6 +58,8 @@
   "userComment": "User comment",
   "unitySize": "Unit size",
 
+  "unit": "Unit",
+
   "status": "Status",
   "createdAt": "Created at",
   "updatedAt": "Updated at",
@@ -67,5 +72,11 @@
   "cleaningType": "Cleaning type",
   "price": "Price",
   "commission": "Commission",
-  "statusName": "Status name"
+  "statusName": "Status name",
+
+  "service": "Service",
+
+  "all": "All",
+
+  "selectLanguage": "Select a language"
 }
