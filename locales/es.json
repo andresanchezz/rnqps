@@ -1,15 +1,12 @@
 {
   "welcome": "Bienvenido",
-
   "created": "Creado",
   "pending": "Pendiente",
   "approved": "Aprobado",
   "rejected": "Rechazado",
   "completed": "Completado",
   "finished": "Finalizado",
-
   "loading": "Cargando",
-
   "noMoreServices": "No hay más servicios",
   "createService": "Crear un servicio",
   "selectADate": "Selecciona una fecha",
@@ -26,55 +23,41 @@
   "selectType": "Selecciona un tipo",
   "selectExtras": "Selecciona extras",
   "comment": "Comentario",
-
   "acceptService": "Aceptar servicio",
   "textAcceptService": "Estás a punto de aceptar el servicio y será asignado a ti",
-
-  "denyService": "Rechazar servicio",
-  "textDenyService": "Dinos por qué vas a rechazar el servicio",
-
+  "rejectService": "Rechazar servicio",
+  "textRejectService": "Dinos por qué vas a rechazar el servicio",
   "confirmService": "Confirmar servicio",
   "textConfirmService": "Vas a confirmar el servicio. Debe estar completado.",
-
   "create": "Crear",
   "confirm": "Confirmar",
-
   "spanish": "Español",
   "english": "Inglés",
-
   "signIn": "Iniciar sesión",
   "logOut": "Cerrar sesión",
-
   "email": "Correo electrónico",
   "password": "Contraseña",
-
   "services": "Servicios",
   "profile": "Perfil",
   "history": "Historial",
-
   "date": "Fecha",
   "schedule": "Horario",
-
   "userComment": "Comentario del usuario",
-
   "status": "Estado",
   "createdAt": "Creado el",
   "updatedAt": "Actualizado el",
-
   "communityName": "Nombre de la comunidad",
   "user": "Usuario",
-
   "company": "Empresa",
   "description": "Descripción",
   "cleaningType": "Tipo de limpieza",
   "price": "Precio",
   "commission": "Comisión",
   "statusName": "Nombre del estado",
-
   "unit": "Unidad",
   "service": "Servicio",
-
   "all": "Todas",
-
-    "selectLanguage": "Selecciona un idioma"
+  "selectLanguage": "Selecciona un idioma",
+  "confirmOnDateError": "No puedes confirmar antes de la fecha del servicio",
+  "confirmOnRejectError": "No puedes rechazar sin dejar un comentario"
 }

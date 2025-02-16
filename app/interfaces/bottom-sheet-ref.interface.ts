@@ -1,0 +1,3 @@
+type BottomSheetRef = {
+    expand: () => void;
+};

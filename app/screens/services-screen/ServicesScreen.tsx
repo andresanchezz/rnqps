@@ -1,109 +1,36 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, FlatList } from "react-native";
-import { TabBar, TabView, Route } from "react-native-tab-view";
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from "react-native";
+import { TabBar, TabView } from "react-native-tab-view";
+import { ActivityIndicator, Button, Text, FAB, TextInput } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 
 import { colors } from "../../../styles/colors";
 import { typography } from "../../../styles/typography";
+import CardService from "../../components/shared/card-task/CardService";
+import useServicesInformation from "./hooks/useServicesInformation.hook";
+import { TabRoute } from "../../interfaces/tab_route.interface";
+import { Service, FilteredServices } from "../../interfaces/services/services.interface";
+import CustomButtonSheet from "../../components/shared/bottom-sheet/CustomButtonSheet";
 import { buttonStyles } from "../../../styles/styles";
 
-import useServicesInformation from "./hooks/useServicesInformation.hook";
-
-import CustomButtonSheet from "../../components/shared/bottom-sheet/CustomButtonSheet";
-import CardService from "../../components/shared/card-task/CardService";
-
-import { ActivityIndicator, Button, FAB, TextInput } from "react-native-paper";
-import { Dropdown } from "react-native-paper-dropdown";
-
-import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-
-import { useTranslation } from "react-i18next";
-
 import moment from "moment";
-import { RefreshControl } from "react-native-gesture-handler";
 
-type TabRoute = Route & {
-  key: string;
-  title: string;
-};
 
-const ServicesScreen: React.FC = () => {
+const ServicesScreen = () => {
+
+  const statusIdMap: Record<string, string | undefined> = {
+    created: "1",
+    pending: "2",
+    approved: "3",
+    rejected: "4",
+    completed: "5",
+    finished: "6",
+    all: undefined,
+  };
+
   const { t } = useTranslation();
 
-  const {
-    user,
-    confirmBottomSheet,
-    openConfirmSheet,
-    openAcceptSheet,
-    openDenySheet,
-    handleUserSelectedAction,
-    openCreateServicesSheet,
-    servicesByStatus,
-    setSelectedService,
-    acceptBottomSheet,
-    denyBottomSheet,
-    comment,
-    setComment,
-    createBottomSheet,
-    createNewService,
-    unitySize,
-    setUnitySize,
-    unityNumber,
-    setUnityNumber,
-    schedule,
-    setSchedule,
-    isScheduleSelected,
-    setisScheduleSelected,
-    date,
-    setDate,
-    isDateSelected,
-    setIsDateSelected,
-    typeId,
-    setTypeId,
-    extraId,
-    setExtraId,
-    options,
-    communityId,
-    setCommunityId,
-    isRefreshing,
-    refreshServices,
-    loadMoreServices,
-    hasMore,
-    isLoading
-
-  } = useServicesInformation();
-
-  const onChangeDate = (event: any, selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      setDate(selectedDate);
-      setIsDateSelected(true);
-    }
-  };
-
-  const onChangeTime = (event: any, selectedTime: Date | undefined) => {
-    if (selectedTime) {
-      setSchedule(selectedTime);
-      setisScheduleSelected(true);
-    }
-  };
-
-  const showDatePicker = () => {
-    DateTimePickerAndroid.open({
-      value: date,
-      onChange: onChangeDate,
-      mode: 'date',
-      is24Hour: true,
-      minimumDate: new Date(),
-    });
-  };
-
-  const showTimePicker = () => {
-    DateTimePickerAndroid.open({
-      value: schedule,
-      onChange: onChangeTime,
-      mode: 'time',
-      is24Hour: true,
-    });
-  };
+  const { user, getServices, allServices, acceptBottomSheet, rejectBottomSheet, confirmBottomSheet, createBottomSheet, openBottomSheet, handleBottomSheetsActions, comment, setComment, setSelectedService } = useServicesInformation();
 
   const [index, setIndex] = useState<number>(0);
   const [routes, setRoutes] = useState<TabRoute[]>([]);
@@ -142,110 +69,92 @@ const ServicesScreen: React.FC = () => {
         ]);
         break;
     }
-  }, [user?.roleId, t]);
+  }, []);
 
-  const isCleaner = user?.roleId === "4";
+  const handleIndexChange = async (newIndex: number) => {
+    setIndex(newIndex);
+    const routeKey = routes[newIndex].key;
+    const statusId = statusIdMap[routeKey];
+
+    if (user?.roleId === "1") {
+      getServices("1", routeKey === "all" ? undefined : statusId);
+    } else {
+      getServices("1");
+    }
+  };
 
   const renderScene = ({ route }: { route: TabRoute }) => {
-    switch (route.key) {
-      case "pending":
-        return (
-          <FlatList
-            style={styles.flatList}
-            data={servicesByStatus.pending}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <CardService
-                service={item}
-                onAccept={isCleaner ? () => {
-                  setSelectedService(item);
-                  openAcceptSheet();
-                } : undefined}
-                onDeny={isCleaner ? () => {
-                  setSelectedService(item);
-                  openDenySheet();
-                } : undefined}
-                hideButtons={!isCleaner}
-              />
-            )}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={refreshServices}
-              />
-            }
-            onEndReached={loadMoreServices}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              isLoading && hasMore ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : null
-            }
-          />
-        );
-      case "approved":
-        return (
-          <FlatList
-            style={styles.flatList}
-            data={servicesByStatus.approved}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <CardService
-                service={item}
-                onConfirm={isCleaner ? () => {
-                  setSelectedService(item);
-                  openConfirmSheet();
-                } : undefined}
 
-                hideButtons={!isCleaner}
+    let dataToShow: Service[] = allServices;
 
-              />
-            )}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={refreshServices}
-              />
-            }
-            onEndReached={loadMoreServices}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              isLoading && hasMore ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : null
-            }
-          />
-        );
-      case "all":
-        return (
-          <FlatList
-            style={styles.flatList}
-            data={servicesByStatus.all.data}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <CardService
-                service={item}
-                hideButtons
-              />
-            )}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={refreshServices}
-              />
-            }
-            onEndReached={loadMoreServices}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              isLoading && hasMore ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : null
-            }
-          />
-        );
-      default:
-        return null;
+    if (user?.roleId === "1") {
+      dataToShow
+    } else {
+      switch (route.key) {
+        case "pending":
+          dataToShow = allServices.filter((service) => service.status.id === "2");
+          break;
+        case "approved":
+          dataToShow = allServices.filter((service) => service.status.id === "3");
+          break;
+        case "rejected":
+          dataToShow = allServices.filter((service) => service.status.id === "4");
+          break;
+        case "completed":
+          dataToShow = allServices.filter((service) => service.status.id === "5");
+          break;
+        case "finished":
+          dataToShow = allServices.filter((service) => service.status.id === "6");
+          break;
+        case "all":
+          dataToShow = allServices; // Mostrar todos los servicios
+          break;
+        default:
+          dataToShow = [];
+          break;
+      }
     }
+
+    return (
+      <View>
+
+        {
+          dataToShow.length > 0 ?
+            <FlatList
+              style={styles.flatList}
+              data={dataToShow}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <CardService service={item}
+                  userRole={user.roleId}
+                  currentView={route.key}
+                  onAccept={() => {
+                    setSelectedService(item)
+                    openBottomSheet(acceptBottomSheet)
+                  }}
+                  onConfirm={() => {
+                    setSelectedService(item)
+                    openBottomSheet(confirmBottomSheet)
+                  }}
+                  onReject={() => {
+                    setSelectedService(item)
+                    openBottomSheet(rejectBottomSheet)
+                  }}
+                />
+              )}
+            />
+
+            :
+
+            <View style={styles.noMoreservicesBox}>
+              <Text>{t("noMoreServices")}</Text>
+            </View>
+
+        }
+
+
+      </View>
+    );
   };
 
   const renderTabBar = (props: any) => (
@@ -257,43 +166,51 @@ const ServicesScreen: React.FC = () => {
     />
   );
 
+
+
   return (
+
     <View style={styles.mainContainer}>
+
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}
-        onIndexChange={setIndex}
+        onIndexChange={handleIndexChange}
         renderTabBar={renderTabBar}
       />
+
 
       {user?.roleId !== "4" && (
         <FAB
           style={styles.fab}
           icon="plus"
           color={colors.light}
-          onPress={openCreateServicesSheet}
+          onPress={() => { }}
         />
       )}
+
+
+
 
       {/* Modal para aceptar un servicio */}
       <CustomButtonSheet ref={acceptBottomSheet} snapPoints={['10%', '25%']}>
         <View style={styles.form}>
           <Text style={styles.bottomSheetTitle}>{t("acceptService")}</Text>
           <Text style={styles.bottomSheetText}>{t("textAcceptService")}</Text>
-          <TouchableOpacity onPress={() => { handleUserSelectedAction('3') }} style={buttonStyles.button}>
+          <TouchableOpacity onPress={() => { handleBottomSheetsActions('3') }} style={buttonStyles.button}>
             <Text style={buttonStyles.buttonText}>{t("confirm")}</Text>
           </TouchableOpacity>
         </View>
       </CustomButtonSheet>
 
       {/* Modal para rechazar un servicio */}
-      <CustomButtonSheet ref={denyBottomSheet} snapPoints={['10%', '35%']}>
+      <CustomButtonSheet ref={rejectBottomSheet} snapPoints={['10%', '35%']}>
         <View style={styles.form}>
-          <Text style={styles.bottomSheetTitle}>{t("denyService")}</Text>
-          <Text style={styles.bottomSheetText}>{t("textDenyService")}</Text>
+          <Text style={styles.bottomSheetTitle}>{t("rejectService")}</Text>
+          <Text style={styles.bottomSheetText}>{t("textRejectService")}</Text>
           <TextInput mode="outlined" numberOfLines={8} value={comment} onChangeText={setComment} />
           <View style={styles.inputSpacing} />
-          <TouchableOpacity onPress={() => { handleUserSelectedAction('4') }} style={buttonStyles.button}>
+          <TouchableOpacity onPress={() => { handleBottomSheetsActions('4') }} style={buttonStyles.button}>
             <Text style={buttonStyles.buttonText}>{t("confirm")}</Text>
           </TouchableOpacity>
         </View>
@@ -304,14 +221,14 @@ const ServicesScreen: React.FC = () => {
         <View style={styles.form}>
           <Text style={styles.bottomSheetTitle}>{t("confirmService")}</Text>
           <Text style={styles.bottomSheetText}>{t("textConfirmService")}</Text>
-          <TouchableOpacity onPress={() => { handleUserSelectedAction('5') }} style={buttonStyles.button}>
+          <TouchableOpacity onPress={() => { handleBottomSheetsActions('5') }} style={buttonStyles.button}>
             <Text style={buttonStyles.buttonText}>{t("confirm")}</Text>
           </TouchableOpacity>
         </View>
       </CustomButtonSheet>
 
       {/* Modal para crear un servicio */}
-      <CustomButtonSheet ref={createBottomSheet} snapPoints={['50', '90']}>
+      {/* <CustomButtonSheet ref={createBottomSheet} snapPoints={['50', '90']}>
         <View style={styles.form}>
           <Text style={styles.bottomSheetTitle}>{t('createService')}</Text>
           <View style={{ height: 15 }}></View>
@@ -395,11 +312,16 @@ const ServicesScreen: React.FC = () => {
             <Text style={buttonStyles.buttonText}>{t("create")}</Text>
           </TouchableOpacity>
         </View>
-      </CustomButtonSheet>
+      </CustomButtonSheet> */}
+
+
+
 
     </View>
-  );
-};
+
+  )
+
+}
 
 const styles = StyleSheet.create({
   mainContainer: {
@@ -429,10 +351,15 @@ const styles = StyleSheet.create({
     height: 15,
   },
   timeButton: {
-    borderRadius: 4
+    borderRadius: 4,
   },
   flatList: {
     paddingVertical: 12,
+  },
+  noMoreservicesBox: {
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 });
 

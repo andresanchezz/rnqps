@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { Text, Avatar, IconButton } from "react-native-paper";
 import { Service } from "../../../interfaces/services/services.interface";
@@ -8,25 +8,38 @@ import { useTranslation } from "react-i18next";
 
 interface CardServiceProps {
     service: Service;
-
-    onAccept?: () => void; 
-    onDeny?: () => void; 
-    onConfirm?: () => void; 
-    hideButtons?: boolean; 
+    onAccept?: () => void;
+    onReject?: () => void;
+    onConfirm?: () => void;
+    onReassign?:()=>void;
+    hideButtons?: boolean;
+    userRole?: string; 
+    currentView?: string; 
 }
 
-const CardService: React.FC<CardServiceProps> = ({
-    service,
-    onAccept,
-    onDeny,
-    onConfirm,
-    hideButtons = false 
+const CardService: React.FC<CardServiceProps> = React.memo(({ 
+    service, 
+    onAccept, 
+    onReject,
+    onReassign, 
+    onConfirm, 
+    hideButtons = false,
+    userRole, 
+    currentView 
 }) => {
     const { toggleExpand, animatedHeight, isExpanded } = useCardBehaviour();
+    const { t } = useTranslation();
 
-    const {t} = useTranslation();
 
-    const showButtons = !hideButtons && (onAccept || onDeny || onConfirm);
+    const showAcceptButton = userRole === "4" && currentView === "pending";
+    const showRejectButton = userRole === "4" && currentView === "pending";
+    const showConfirmButton = userRole === "4" && currentView === "approved";
+    const showReassign = userRole === "1"; 
+
+    const handleAccept = useCallback(() => onAccept?.(), [onAccept]);
+    const handleReject = useCallback(() => onReject?.(), [onReject]);
+    const handleConfirm = useCallback(() => onConfirm?.(), [onConfirm]);
+    const handleReassign = useCallback(() => onReassign?.(), [onReassign]);
 
     return (
         <View>
@@ -52,32 +65,12 @@ const CardService: React.FC<CardServiceProps> = ({
                             </View>
                         </View>
                     </TouchableOpacity>
-                    {showButtons && (
+                    {!hideButtons && (
                         <View style={styles.buttonsContainer}>
-                            {onAccept && (
-                                <IconButton
-                                    icon="check"
-                                    size={24}
-                                    onPress={onAccept}
-                                    style={styles.iconButton}
-                                />
-                            )}
-                            {onDeny && (
-                                <IconButton
-                                    icon="close"
-                                    size={24}
-                                    onPress={onDeny}
-                                    style={styles.iconButton}
-                                />
-                            )}
-                            {onConfirm && (
-                                <IconButton
-                                    icon="check-all"
-                                    size={24}
-                                    onPress={onConfirm}
-                                    style={styles.iconButton}
-                                />
-                            )}
+                            {showAcceptButton && <IconButton icon="check" size={24} onPress={handleAccept} style={styles.iconButton} />}
+                            {showRejectButton && <IconButton icon="close" size={24} onPress={handleReject} style={styles.iconButton} />}
+                            {showConfirmButton && <IconButton icon="check-all" size={24} onPress={handleConfirm} style={styles.iconButton} />}
+                            {showReassign && <IconButton icon="star" size={24} onPress={handleReassign} style={styles.iconButton} />}
                         </View>
                     )}
                 </View>
@@ -99,13 +92,12 @@ const CardService: React.FC<CardServiceProps> = ({
                         <Text style={typography.bodyLarge.bold}>{t("status")}: <Text>{service.status?.statusName || "N/A"}</Text></Text>
                         <Text style={typography.bodyLarge.bold}>{t("user")} ID: <Text>{service.userId || "N/A"}</Text></Text>
                         <Text style={typography.bodyLarge.bold}>{t("service")} ID: <Text>{service.id}</Text></Text>
-                        
                     </Animated.View>
                 )}
             </Animated.View>
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     card: {
@@ -145,7 +137,7 @@ const styles = StyleSheet.create({
     },
     buttonsContainer: {
         flexDirection: "row",
-        alignItems: 'center',
+        alignItems: "center",
         marginRight: 10,
     },
     iconButton: {

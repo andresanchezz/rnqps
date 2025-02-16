@@ -2,11 +2,10 @@ import React from "react";
 import { View, StyleSheet, FlatList } from "react-native"; 
 import { colors } from "../../../styles/colors";
 import useServicesInformation from "../services-screen/hooks/useServicesInformation.hook";
-import CardService from "../../components/shared/card-task/CardService";
-
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator } from "react-native-paper";
 import { RefreshControl } from "react-native-gesture-handler";
+import CardService from "../../components/shared/card-task/CardService";
 
 const HistoryScreen = () => {
 
@@ -14,47 +13,23 @@ const HistoryScreen = () => {
 
     const {
         user,
-        servicesByStatus,
-        isRefreshing,
-        refreshServices,
-        loadMoreServices,
-        isLoading,
-        hasMore
+        allServices
     } = useServicesInformation();
 
-   
-    const historyServices = [
-        ...servicesByStatus.approved,
-        ...servicesByStatus.rejected,
-        ...servicesByStatus.completed,
-        ...servicesByStatus.finished,
-    ];
+    /* const historyServices = [
+        ...allServices
+    ]; */
 
     return (
         <View style={styles.mainContainer}>
             <FlatList
-                data={historyServices}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <CardService
-                        key={item.id}
-                        service={item}
-                        hideButtons={true}
-                    />
-                )}
-                refreshControl={
-                    <RefreshControl
-                      refreshing={isRefreshing}
-                      onRefresh={refreshServices}
-                    />
-                  }
-                  onEndReached={loadMoreServices}
-                  onEndReachedThreshold={0.5}
-                  ListFooterComponent={
-                    isLoading && hasMore ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    ) : null
-                  }
+              style={styles.flatList}
+              data={allServices}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <CardService service={item}
+                />
+              )}
             />
         </View>
     );
@@ -75,6 +50,9 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         color: colors.dark,
     },
+    flatList: {
+        paddingVertical: 12,
+      },
 });
 
 export default HistoryScreen;

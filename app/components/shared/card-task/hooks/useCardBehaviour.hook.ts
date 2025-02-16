@@ -1,9 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { Animated, Easing } from 'react-native';
-import { Roles } from '../../../../interfaces/roles/roles.interface';
+import { Roles } from '../../../../interfaces/roles.interface';
 
 const useCardBehaviour = () => {
-    
+
     const animatedHeight = useRef(new Animated.Value(0)).current;
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -19,22 +19,22 @@ const useCardBehaviour = () => {
     /* const allowedActions = {
         [Roles.SUPER_ADMIN]: {
             canAcceptService: { status: false, function: acceptService },
-            canDenyService: { status: false, function: denyService },
+            canRejectService: { status: false, function: RejectService },
             canAddAttachments: { status: false, function: addAttachments },
         },
         [Roles.PANEL_USER]: {
             canAcceptService: { status: false, function: acceptService },
-            canDenyService: { status: false, function: denyService },
+            canRejectService: { status: false, function: RejectService },
             canAddAttachments: { status: false, function: addAttachments },
         },
         [Roles.MANAGER]: {
             canAcceptService: { status: false, function: acceptService },
-            canDenyService: { status: false, function: denyService },
+            canRejectService: { status: false, function: RejectService },
             canAddAttachments: { status: false, function: addAttachments },
         },
         [Roles.CLEANER]: {
             canAcceptService: { status: true, function: acceptService },
-            canDenyService: { status: true, function: denyService },
+            canRejectService: { status: true, function: RejectService },
             canAddAttachments: { status: true, function: addAttachments },
         },
     }; */

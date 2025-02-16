@@ -1,4 +1,4 @@
-import { Meta } from "../meta/meta.interface";
+import { Meta } from "../meta.interface";
 
 export interface Services {
     data: Service[];
@@ -23,6 +23,15 @@ export interface Service {
     type: Type;
     status: Status;
 }
+
+export interface FilteredServices {
+    created: Service[];
+    pending: Service[];
+    approved: Service[];
+    rejected: Service[];
+    completed: Service[];
+    finished: Service[];
+  }
 
 export interface Community {
     id: string;
@@ -49,4 +58,14 @@ export interface Type {
     communityId: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface ServiceByStatusId {
+    all: Services;
+    created: Services;
+    pending: Services;
+    approved: Services;
+    rejected: Services;
+    completed: Services;
+    finished: Services;
 }

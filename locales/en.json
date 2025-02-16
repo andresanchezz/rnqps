@@ -1,15 +1,12 @@
 {
   "welcome": "Welcome back",
-
   "created": "Created",
   "pending": "Pending",
   "approved": "Approved",
   "rejected": "Rejected",
   "completed": "Completed",
   "finished": "Finished",
-
   "loading": "Loading...",
-
   "noMoreServices": "There are no more services",
   "createService": "Create a service",
   "selectADate": "Select a date",
@@ -26,57 +23,42 @@
   "selectType": "Select a type",
   "selectExtras": "Select extras",
   "comment": "Comment",
-
   "acceptService": "Accept service",
   "textAcceptService": "You are about to accept the service, and it will be assigned to you",
-
-  "denyService": "Deny service",
-  "textDenyService": "Tell us why you are going to deny the service",
-
-  "confirmService": "Confirma service",
+  "rejectService": "Reject service",
+  "textRejectService": "Tell us why you are going to Reject the service",
+  "confirmService": "Confirm a service",
   "textConfirmService": "You are about to confirm the service. Must be completed.",
-
   "create": "Create",
   "confirm": "Confirm",
-
   "spanish": "Spanish",
   "english": "English",
-
   "signIn": "Sign in",
   "logOut": "Log out",
-
   "email": "Email",
   "password": "Password",
-
   "services": "Services",
   "profile": "Profile",
   "history": "History",
-
   "date": "Date",
   "schedule": "Schedule",
-
   "userComment": "User comment",
   "unitySize": "Unit size",
-
   "unit": "Unit",
-
   "status": "Status",
   "createdAt": "Created at",
   "updatedAt": "Updated at",
-
   "communityName": "Community name",
   "user": "User",
-
   "company": "Company",
   "description": "Description",
   "cleaningType": "Cleaning type",
   "price": "Price",
   "commission": "Commission",
   "statusName": "Status name",
-
   "service": "Service",
-
   "all": "All",
-
-  "selectLanguage": "Select a language"
+  "selectLanguage": "Select a language",
+  "confirmOnDateError": "You can't confirm before the service date",
+   "confirmOnRejectError": "You can't reject without leave a comment"
 }
