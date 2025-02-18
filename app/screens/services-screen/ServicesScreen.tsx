@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from "react-native";
 import { TabBar, TabView } from "react-native-tab-view";
 import { ActivityIndicator, Button, Text, FAB, TextInput } from "react-native-paper";
+import { Dropdown } from "react-native-paper-dropdown";
 import { useTranslation } from "react-i18next";
 
 import { colors } from "../../../styles/colors";
@@ -17,6 +18,7 @@ import moment from "moment";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import { ReassignBottomSheet } from "../../components/shared/bottom-sheet/ReassignBottomSheet";
 import { AUser, User } from "../../interfaces/user/users";
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
 
 const ServicesScreen = () => {
@@ -29,16 +31,6 @@ const ServicesScreen = () => {
     completed: "5",
     finished: "6",
     all: undefined,
-  };
-
-  const { t } = useTranslation();
-
-  const handleSelectUser = (item: AUser) => {
-    if (selectedUser?.id !== item?.id) {
-      setSelectedUser(item);
-    } else {
-      setSelectedUser(null);
-    }
   };
 
   const {
@@ -60,8 +52,75 @@ const ServicesScreen = () => {
     selectedUser,
     setSelectedUser,
 
-    isLoading
+    isLoading,
+    createNewService,
+    isDateSelected,
+    isScheduleSelected,
+    setIsDateSelected,
+    setSchedule,
+    setisScheduleSelected,
+    setUnityNumber,
+    setUnitySize,
+    schedule,
+    unitySize,
+    unityNumber,
+    setDate,
+    options,
+    setTypeId,
+    setCommunityId,
+    setExtraId,
+    communityId,
+    typeId,
+    extraId,
+    date,
   } = useServicesInformation();
+
+  const { t } = useTranslation();
+
+
+  //* DATE Y TIME PICKER 
+  const onChangeTime = (event: any, selectedTime: Date | undefined) => {
+    if (selectedTime) {
+      setSchedule(selectedTime);
+      setisScheduleSelected(true);
+    }
+  }
+
+  const onChangeDate = (event: any, selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      setDate(selectedDate);
+      setIsDateSelected(true);
+    }
+  };
+
+  const showDatePicker = () => {
+    DateTimePickerAndroid.open({
+      value: date,
+      onChange: onChangeDate,
+      mode: 'date',
+      is24Hour: true,
+      minimumDate: new Date(),
+    });
+  };
+
+  const showTimePicker = () => {
+    DateTimePickerAndroid.open({
+      value: schedule,
+      onChange: onChangeTime,
+      mode: 'time',
+      is24Hour: true,
+    });
+  };
+
+
+  const handleSelectUser = (item: AUser) => {
+    if (selectedUser?.id !== item?.id) {
+      setSelectedUser(item);
+    } else {
+      setSelectedUser(null);
+    }
+  };
+
 
   const [index, setIndex] = useState<number>(0);
   const [routes, setRoutes] = useState<TabRoute[]>([]);
@@ -111,11 +170,11 @@ const ServicesScreen = () => {
     const currentData = filteredServices[routeKey].data;
     if (currentData.length === 0) {
       // Si no hay datos, solicita la primera página
-     if(user.roleId === "1"){
-      getServices(1, routeKey === 'all' ? undefined : statusId);
-     }else{
-      getServices(1)
-     }
+      if (user.roleId === "1") {
+        getServices(1, routeKey === 'all' ? undefined : statusId);
+      } else {
+        getServices(1)
+      }
     }
   };
 
@@ -202,9 +261,9 @@ const ServicesScreen = () => {
 
                 <View style={styles.footer}>
                   {
-                    isLoading 
-                    ? <ActivityIndicator />
-                    : <Text>{t("noMoreServices")}</Text>
+                    isLoading
+                      ? <ActivityIndicator />
+                      : <Text>{t("noMoreServices")}</Text>
                   }
                 </View>
 
@@ -275,7 +334,91 @@ const ServicesScreen = () => {
           </TouchableOpacity>
         </View>
       </MyCustomBottomSheet>
+
       {/*Create service*/}
+      <MyCustomBottomSheet ref={createBottomSheet} snapPoints={['50', '90']}>
+        <View>
+          <Text style={styles.bottomSheetTitle}>{t('createService')}</Text>
+          <View style={{ height: 15 }}></View>
+          <Button mode="outlined" onPress={showDatePicker} style={styles.timeButton}>
+            <Text style={{ color: colors.dark }}>
+              {isDateSelected
+                ? `${t('selectedDate')} ${moment(date).format('MMMM D YYYY')}` // Formato: "enero 5 2025"
+                : `${t('selectADate')}`}
+            </Text>
+          </Button>
+          <View style={styles.inputSpacing} />
+          <Button mode="outlined" onPress={showTimePicker} style={styles.timeButton}>
+            <Text style={{ color: colors.dark }}>
+              {isScheduleSelected
+                ? `${t('selectedTime')} ${moment(schedule).format('hh:mm A')}` // Formato: "02:30 PM"
+                : `${t('selectATime')}`}
+            </Text>
+          </Button>
+          <View style={styles.inputSpacing} />
+          <Dropdown
+            mode="outlined"
+            label={t('unitSize')}
+            placeholder={t('selectUnitSize')}
+            options={[
+              { label: `1 ${t('bedroom')}`, value: "1 Bedroom" },
+              { label: `2 ${t('bedroom')}`, value: "2 Bedroom" },
+              { label: `3 ${t('bedroom')}`, value: "3 Bedroom" },
+              { label: `4 ${t('bedroom')}`, value: "4 Bedroom" },
+              { label: `5 ${t('bedroom')}`, value: "5 Bedroom" },
+            ]}
+            value={unitySize}
+            onSelect={(value: string | undefined) => setUnitySize(value)}
+          />
+          <View style={styles.inputSpacing} />
+          <TextInput
+            mode="outlined"
+            placeholder={t('unitNumber')}
+            inputMode="numeric"
+            value={unityNumber}
+            onChangeText={(text) => setUnityNumber(text)}
+          />
+          <View style={styles.inputSpacing} />
+          <Dropdown
+            mode="outlined"
+            label={t('community')}
+            placeholder={t("selectCommunity")}
+            options={options?.communities}
+            value={communityId}
+            onSelect={(value) => setCommunityId(value)}
+          />
+          <View style={styles.inputSpacing} />
+          <Dropdown
+            mode="outlined"
+            label={t("type")}
+            placeholder={t("selectType")}
+            options={options?.cleaningTypes}
+            value={typeId}
+            onSelect={(value) => setTypeId(value)}
+          />
+          <View style={styles.inputSpacing} />
+          <Dropdown
+            mode="outlined"
+            label="Extras"
+            placeholder={t("selectExtras")}
+            options={options?.extras}
+            value={extraId}
+            onSelect={(value) => setExtraId(value)}
+          />
+          <View style={styles.inputSpacing} />
+          <TextInput
+            mode="outlined"
+            placeholder={t("comment")}
+            numberOfLines={4}
+            value={comment}
+            onChangeText={(text) => setComment(text)}
+          />
+          <View style={styles.inputSpacing} />
+          <TouchableOpacity onPress={() => createNewService()} style={buttonStyles.button}>
+            <Text style={buttonStyles.buttonText}>{t("create")}</Text>
+          </TouchableOpacity>
+        </View>
+      </MyCustomBottomSheet>
 
       {/*Reassign*/}
       <MyCustomBottomSheet ref={reassignBottomSheet} snapPoints={['20%', '45%']}>
@@ -308,12 +451,16 @@ const ServicesScreen = () => {
       </MyCustomBottomSheet>
 
 
+      {user?.roleId !== "4" && (
+        <FAB
+          style={styles.fab}
+          icon="plus"
+          color={colors.light}
+          onPress={()=>{openBottomSheet(createBottomSheet)}}
+        />
+      )}
+
     </View>
-
-
-
-
-
 
   )
 

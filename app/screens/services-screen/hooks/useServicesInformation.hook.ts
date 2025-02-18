@@ -100,7 +100,7 @@ const useServicesInformation = () => {
     let options: any = {};
     let method = 'GET';
     let filter: ServiceStatus;
-  
+
     if (statusId) {
       filter = mapStatusByNumber(statusId);
       if (
@@ -121,7 +121,7 @@ const useServicesInformation = () => {
         return;
       }
     }
-  
+
     if (statusId) {
       switch (user.roleId) {
         case '1':
@@ -136,7 +136,9 @@ const useServicesInformation = () => {
         case '3':
           url = '/services/by-communities?take=50';
           options = {
-            data: {communities: await getCommunitiesByManager()}
+            data: {
+              communities: await getCommunitiesByManager()
+            }
           }
           method = 'POST';
           break;
@@ -146,14 +148,14 @@ const useServicesInformation = () => {
           break;
       }
     }
-  
+
     try {
       const { data } = await apiServicesQPS<Services>(url, { method, ...options });
-  console.log(data)
+      console.log(data)
 
       setFilteredServices((prevState) => {
         const updatedState = { ...prevState };
-  
+
         if (!statusId) {
           updatedState.all.data = [...updatedState.all.data, ...data.data];
           updatedState.all.meta = data.meta;
@@ -161,25 +163,25 @@ const useServicesInformation = () => {
 
         data.data.forEach((service) => {
           switch (service.statusId) {
-            case '1': 
+            case '1':
               updatedState.created.data.push(service);
-              if (statusId === '1') updatedState.created.meta = data.meta; 
+              if (statusId === '1') updatedState.created.meta = data.meta;
               break;
             case '2': // PENDING
               updatedState.pending.data.push(service);
-              if (statusId === '2') updatedState.pending.meta = data.meta; 
+              if (statusId === '2') updatedState.pending.meta = data.meta;
               break;
             case '3': // APPROVED
               updatedState.approved.data.push(service);
-              if (statusId === '3') updatedState.approved.meta = data.meta; 
+              if (statusId === '3') updatedState.approved.meta = data.meta;
               break;
             case '4': // REJECTED
               updatedState.rejected.data.push(service);
-              if (statusId === '4') updatedState.rejected.meta = data.meta; 
+              if (statusId === '4') updatedState.rejected.meta = data.meta;
               break;
             case '5': // COMPLETED
               updatedState.completed.data.push(service);
-              if (statusId === '5') updatedState.completed.meta = data.meta; 
+              if (statusId === '5') updatedState.completed.meta = data.meta;
               break;
             case '6': // FINISHED
               updatedState.finished.data.push(service);
@@ -189,10 +191,10 @@ const useServicesInformation = () => {
               break;
           }
         });
-  
+
         return updatedState;
       });
-  
+
       setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
@@ -334,7 +336,8 @@ const useServicesInformation = () => {
     };
 
     try {
-      await apiServicesQPS.post('/services', newService);
+      
+      const data = await apiServicesQPS.post('/services', newService);
 
     } catch (error: any) {
       console.log(error);
@@ -395,7 +398,8 @@ const useServicesInformation = () => {
     }
 
     if (communitiesList) {
-      cleaningTypeOptions  = communitiesList.map((community) => ({
+      communityOptions = communitiesList.map((community) => (
+        {
           label: community.communityName,
           value: community.id,
         }))
@@ -409,8 +413,8 @@ const useServicesInformation = () => {
     }
 
     setOptions({ communities: communityOptions, extras: extrasOptions, cleaningTypes: cleaningTypeOptions });
-
-  }; 
+    console.log(communityOptions)
+  };
 
 
   useEffect(() => {
@@ -422,10 +426,11 @@ const useServicesInformation = () => {
     }
 
     if (user.roleId !== "4") {
-      getUsers()
+      fetchDataToCreateModal();
+      getUsers();
     }
 
-    getCommunitiesList()
+   
 
   }, []);
 
@@ -479,7 +484,8 @@ const useServicesInformation = () => {
     reassignService,
     selectedUser,
     setSelectedUser,
-    isLoading
+    isLoading,
+    createNewService
   };
 };
 
