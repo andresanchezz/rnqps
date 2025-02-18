@@ -24,14 +24,6 @@ export interface Service {
     status: Status;
 }
 
-export interface FilteredServices {
-    created: Service[];
-    pending: Service[];
-    approved: Service[];
-    rejected: Service[];
-    completed: Service[];
-    finished: Service[];
-  }
 
 export interface Community {
     id: string;
@@ -69,3 +61,7 @@ export interface ServiceByStatusId {
     completed: Services;
     finished: Services;
 }
+
+
+export type ServiceStatus = 'created' | 'pending' | 'approved' | 'rejected' | 'completed' | 'finished';
+

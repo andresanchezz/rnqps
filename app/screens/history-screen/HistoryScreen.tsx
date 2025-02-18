@@ -24,7 +24,7 @@ const HistoryScreen = () => {
         <View style={styles.mainContainer}>
             <FlatList
               style={styles.flatList}
-              data={allServices}
+              data={allServices?.data}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <CardService service={item}

@@ -15,13 +15,13 @@ interface BottomSheetProps {
 }
 
 const CustomButtonSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
-    ({ children, snapPoints = ['50%', '75%'] }, ref, ) => {
-       
+    ({ children, snapPoints = ['50%', '75%'] }, ref,) => {
+
         const handleSheetChanges = useCallback((index: number) => {
 
         }, []);
 
-        
+
         const renderBackdrop = useCallback(
             (props: BottomSheetBackdropProps) => (
                 <BottomSheetBackdrop
@@ -34,14 +34,14 @@ const CustomButtonSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
         );
 
         return (
-            <CustomBottomSheet
-                ref={ref} 
-                index={-1} 
-                 
-                snapPoints={snapPoints} 
-                onChange={handleSheetChanges} 
-                enablePanDownToClose={true} 
-                backdropComponent={renderBackdrop} 
+            <CustomBottomSheet enableContentPanningGesture={false}
+                
+                ref={ref}
+                index={-1}
+
+                snapPoints={snapPoints}
+                onChange={handleSheetChanges}
+                backdropComponent={renderBackdrop}
             >
                 <PaperProvider>
                     <BottomSheetView style={styles.bottomSheetContent}>
