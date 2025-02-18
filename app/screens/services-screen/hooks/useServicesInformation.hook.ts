@@ -135,7 +135,9 @@ const useServicesInformation = () => {
           break;
         case '3':
           url = '/services/by-communities?take=50';
-          options = await getCommunitiesByManager();
+          options = {
+            data: {communities: await getCommunitiesByManager()}
+          }
           method = 'POST';
           break;
         case '4':
@@ -161,27 +163,27 @@ const useServicesInformation = () => {
           switch (service.statusId) {
             case '1': 
               updatedState.created.data.push(service);
-              if (statusId === '1') updatedState.created.meta = data.meta; // Actualizar meta solo si es el filtro actual
+              if (statusId === '1') updatedState.created.meta = data.meta; 
               break;
             case '2': // PENDING
               updatedState.pending.data.push(service);
-              if (statusId === '2') updatedState.pending.meta = data.meta; // Actualizar meta solo si es el filtro actual
+              if (statusId === '2') updatedState.pending.meta = data.meta; 
               break;
             case '3': // APPROVED
               updatedState.approved.data.push(service);
-              if (statusId === '3') updatedState.approved.meta = data.meta; // Actualizar meta solo si es el filtro actual
+              if (statusId === '3') updatedState.approved.meta = data.meta; 
               break;
             case '4': // REJECTED
               updatedState.rejected.data.push(service);
-              if (statusId === '4') updatedState.rejected.meta = data.meta; // Actualizar meta solo si es el filtro actual
+              if (statusId === '4') updatedState.rejected.meta = data.meta; 
               break;
             case '5': // COMPLETED
               updatedState.completed.data.push(service);
-              if (statusId === '5') updatedState.completed.meta = data.meta; // Actualizar meta solo si es el filtro actual
+              if (statusId === '5') updatedState.completed.meta = data.meta; 
               break;
             case '6': // FINISHED
               updatedState.finished.data.push(service);
-              if (statusId === '6') updatedState.finished.meta = data.meta; // Actualizar meta solo si es el filtro actual
+              if (statusId === '6') updatedState.finished.meta = data.meta;
               break;
             default:
               break;
