@@ -27,7 +27,7 @@
   "textAcceptService": "You are about to accept the service, and it will be assigned to you",
   "rejectService": "Reject service",
   "reassignService": "Reassign service",
-  "textReassignService": "Change cleaner",
+  "textReassignService": "Select the new cleaner",
   "textRejectService": "Tell us why you are going to Reject the service",
   "confirmService": "Confirm a service",
   "textConfirmService": "You are about to confirm the service. Must be completed.",

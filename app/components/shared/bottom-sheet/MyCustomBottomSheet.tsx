@@ -14,7 +14,7 @@ interface BottomSheetProps {
     snapPoints?: string[]
 }
 
-const CustomButtonSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
+const MyCustomBottomSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
     ({ children, snapPoints = ['50%', '75%'] }, ref,) => {
 
         const handleSheetChanges = useCallback((index: number) => {
@@ -35,7 +35,7 @@ const CustomButtonSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
 
         return (
             <CustomBottomSheet enableContentPanningGesture={false}
-                
+
                 ref={ref}
                 index={-1}
 
@@ -53,12 +53,13 @@ const CustomButtonSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
     }
 );
 
-export default CustomButtonSheet;
+export default MyCustomBottomSheet;
 
 const styles = StyleSheet.create({
     bottomSheetContent: {
         flex: 1,
         backgroundColor: colors.light,
+        padding: 20
     },
     bottomSheetTitle: {
         ...typography.headingMedium.bold,

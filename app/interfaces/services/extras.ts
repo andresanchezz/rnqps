@@ -1,9 +1,9 @@
 export interface Extras {
-    data: Datum[];
+    data: ExtrasData[];
     meta: Meta;
 }
 
-export interface Datum {
+export interface ExtrasData {
     id:         string;
     item:       string;
     itemPrice:  number;

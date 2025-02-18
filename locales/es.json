@@ -25,6 +25,8 @@
   "comment": "Comentario",
   "acceptService": "Aceptar servicio",
   "textAcceptService": "Estás a punto de aceptar el servicio y será asignado a ti",
+  "reassignService": "Reasignar servicio",
+  "textReassignService": "Selecciona al nuevo encargado",
   "rejectService": "Rechazar servicio",
   "textRejectService": "Dinos por qué vas a rechazar el servicio",
   "confirmService": "Confirmar servicio",

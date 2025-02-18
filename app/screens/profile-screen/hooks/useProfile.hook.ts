@@ -23,7 +23,7 @@ const useProfile = () => {
         await SecureStore.deleteItemAsync('userId');
         await SecureStore.deleteItemAsync('email');
 
-        navigation.navigate('LoginScreen');
+        
     }
 
     const changeLanguage = async (lng:string) => {
