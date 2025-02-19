@@ -53,7 +53,7 @@ export interface Type {
 }
 
 export interface ServiceByStatusId {
-    all: Services;
+    all: Services,
     created: Services;
     pending: Services;
     approved: Services;

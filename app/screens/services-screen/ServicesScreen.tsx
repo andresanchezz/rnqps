@@ -35,6 +35,7 @@ const ServicesScreen = () => {
 
   const {
     user,
+
     getServices,
     filteredServices,
     acceptBottomSheet,
@@ -112,7 +113,6 @@ const ServicesScreen = () => {
     });
   };
 
-
   const handleSelectUser = (item: AUser) => {
     if (selectedUser?.id !== item?.id) {
       setSelectedUser(item);
@@ -162,19 +162,22 @@ const ServicesScreen = () => {
   }, []);
 
   const handleIndexChange = async (newIndex: number) => {
+
     setIndex(newIndex);
+
     const routeKey = routes[newIndex].key as keyof ServiceByStatusId;
     const statusId = statusIdMap[routeKey];
-
-    // Verifica si ya hay datos cargados para esta pestaña
     const currentData = filteredServices[routeKey].data;
+
     if (currentData.length === 0) {
-      // Si no hay datos, solicita la primera página
-      if (user.roleId === "1") {
-        getServices(1, routeKey === 'all' ? undefined : statusId);
-      } else {
-        getServices(1)
+      if (user.roleId === "1" && statusId !== "all") {
+
+        getServices(1, statusId)
       }
+      if (user.roleId === "4") {
+        getServices(1, statusId, user.id)
+      }
+
     }
   };
 
@@ -254,8 +257,12 @@ const ServicesScreen = () => {
                 />
               )}
               onEndReached={() => {
-                const currentPage = filteredServices[route.key as keyof ServiceByStatusId]?.meta.page || 1;
-                getServices(currentPage + 1, route.key === 'all' ? undefined : statusIdMap[route.key]);
+                const currentPage = filteredServices[route.key as keyof ServiceByStatusId]!.meta.page || 1;
+                if(user.roleId === "1"){
+                  getServices(currentPage + 1, statusIdMap[route.key]);
+                }else{
+                  getServices(currentPage + 1, statusIdMap[route.key], user.id);
+                }
               }}
               ListFooterComponent={
 
@@ -456,7 +463,7 @@ const ServicesScreen = () => {
           style={styles.fab}
           icon="plus"
           color={colors.light}
-          onPress={()=>{openBottomSheet(createBottomSheet)}}
+          onPress={() => { openBottomSheet(createBottomSheet) }}
         />
       )}
 

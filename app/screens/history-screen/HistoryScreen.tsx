@@ -6,21 +6,18 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Text } from "react-native-paper";
 import { RefreshControl } from "react-native-gesture-handler";
 import CardService from "../../components/shared/card-task/CardService";
+import { Services } from "i18next";
 
 const HistoryScreen = () => {
 
     const { t } = useTranslation();
-
-    useEffect(() => {
-      getServices(1, undefined)
-    }, [])
-    
 
     const {
         user,
         filteredServices,
         getServices
     } = useServicesInformation();
+
 
     return (
         <View style={styles.mainContainer}>
@@ -33,7 +30,7 @@ const HistoryScreen = () => {
               )}
               onEndReached={() => {
                 const currentPage = filteredServices.all.meta.page;
-                getServices(currentPage + 1);
+                getServices(currentPage + 1, "");
               }}
             />
         </View>
