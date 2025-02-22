@@ -15,23 +15,32 @@ const HistoryScreen = () => {
     const {
         user,
         filteredServices,
-        getServices
+        getServices,
+        getCleanerServices
     } = useServicesInformation();
+
+    useEffect(() => {
+        if (user.roleId === "4") {
+            getCleanerServices();
+        } else {
+            getServices(1)
+        }
+    }, [])
 
 
     return (
         <View style={styles.mainContainer}>
             <FlatList
-              style={styles.flatList}
-              data={filteredServices.all.data}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <CardService service={item} />
-              )}
-              onEndReached={() => {
-                const currentPage = filteredServices.all.meta.page;
-                getServices(currentPage + 1, "");
-              }}
+                style={styles.flatList}
+                data={filteredServices.all.data}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <CardService service={item} />
+                )}
+                onEndReached={() => {
+                    const currentPage = filteredServices.all.meta.page;
+                    getServices(currentPage + 1);
+                }}
             />
         </View>
     );

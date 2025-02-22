@@ -14,16 +14,12 @@ const useProfile = () => {
     const navigation = useNavigation<NavigationProp>();
 
     const { i18n } = useTranslation();
+    const store = useAuthStore();
+    const {  user } = useAuthStore();
 
-    const { user } = useAuthStore();
+    const handleSignOut = async () => {
 
-    const signOut = async () => {
-
-        await SecureStore.deleteItemAsync('userToken');
-        await SecureStore.deleteItemAsync('userId');
-        await SecureStore.deleteItemAsync('email');
-
-        
+         store.signOut();
     }
 
     const changeLanguage = async (lng:string) => {
@@ -33,7 +29,7 @@ const useProfile = () => {
 
 
     return {
-        signOut,
+        signOut: handleSignOut,
         changeLanguage,
         user
     }

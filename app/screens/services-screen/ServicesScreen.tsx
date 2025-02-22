@@ -74,6 +74,10 @@ const ServicesScreen = () => {
     typeId,
     extraId,
     date,
+
+    isRefreshing,
+    getManagerServices
+
   } = useServicesInformation();
 
   const { t } = useTranslation();
@@ -119,6 +123,19 @@ const ServicesScreen = () => {
     } else {
       setSelectedUser(null);
     }
+  };
+
+  const handleRefresh = () => {
+
+    const routeKey = routes[index].key as keyof ServiceByStatusId;
+    const statusId = statusIdMap[routeKey];
+
+    if (user.roleId === "1") {
+       getServices(1, statusId, undefined, true);
+    } else if (user.roleId === "4") {
+       getServices(1, statusId, user.id, true);
+    }
+
   };
 
 
@@ -176,6 +193,10 @@ const ServicesScreen = () => {
       }
       if (user.roleId === "4") {
         getServices(1, statusId, user.id)
+      }
+
+      if(user.roleId === "3"){
+        getManagerServices();
       }
 
     }
@@ -258,14 +279,21 @@ const ServicesScreen = () => {
               )}
               onEndReached={() => {
                 const currentPage = filteredServices[route.key as keyof ServiceByStatusId]!.meta.page || 1;
-                if(user.roleId === "1"){
+                if (user.roleId === "1") {
                   getServices(currentPage + 1, statusIdMap[route.key]);
-                }else{
+                } else {
                   getServices(currentPage + 1, statusIdMap[route.key], user.id);
                 }
               }}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  colors={[colors.primary]} 
+                  tintColor={colors.primary} 
+                />
+              }
               ListFooterComponent={
-
                 <View style={styles.footer}>
                   {
                     isLoading

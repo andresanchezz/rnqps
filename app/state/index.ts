@@ -8,6 +8,7 @@ interface AuthStore {
     setToken(token: string): void;
     setRole(role: string): void;
     setUser(user: UserById): void;
+    signOut(): void; 
 }
 
 interface HomeStore {
@@ -22,7 +23,10 @@ const useAuthStore = create<AuthStore>((set) => ({
     user: null,
     setToken: (token: string) => set((_) => ({ token })),
     setRole: (role: string) => set((_) => ({ role })),
-    setUser: (user: UserById) => set((_) => ({ user }))
+    setUser: (user: UserById) => set((_) => ({ user })),
+    signOut: () => {
+        set({ token: "" });
+    },
 }));
 
 const useHomeStore = create<HomeStore>((set) => ({

@@ -55,6 +55,7 @@ const useServicesInformation = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   const [filteredServices, setFilteredServices] = useState<ServiceByStatusId>({
     all: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
@@ -93,10 +94,30 @@ const useServicesInformation = () => {
     return statusMap[statusNumber] || 'created';
   }
 
-
   const getServices = async (page: number, statusId?: string, userId?: string, isRefreshing?: boolean) => {
-   
+
+
+    if (isLoading) {
+      return
+    }
+
+    if (isRefreshing) {
+      setIsRefreshing(true)
+    }
+
     setIsLoading(true);
+
+    if (isRefreshing && statusId) {
+      const filter = mapStatusByNumber(statusId);
+      filteredServices[filter].data = []
+      filteredServices[filter].meta = { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 }
+    }
+
+    if (isRefreshing && !statusId) {
+      filteredServices.all.data = []
+      filteredServices.all.meta = { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 }
+    }
+
 
     let url = '';
     let filter: ServiceStatus;
@@ -108,10 +129,9 @@ const useServicesInformation = () => {
         : `/services?page=${page}`;
 
 
-
     if (statusId) {
       filter = mapStatusByNumber(statusId);
-      
+
       if (
         !filteredServices[filter].meta.hasNextPage ||
         page > filteredServices[filter].meta.pageCount ||
@@ -136,9 +156,9 @@ const useServicesInformation = () => {
 
 
     try {
-      console.log(url)
+
       const { data } = await apiServicesQPS<Services>(url);
-      console.log(data)
+
       if (statusId) {
         setFilteredServices(filterServices(data, statusId));
       } else {
@@ -150,17 +170,70 @@ const useServicesInformation = () => {
           },
         }));
       }
-
-      setIsLoading(false);
-
     } catch (error) {
-
-      setIsLoading(false);
       console.error('Error fetching services:', error);
       Sentry.captureException(error);
+    } finally {
+      setIsRefreshing(false);
+      setIsLoading(false);
     }
 
   };
+
+  const getCleanerServices = async () => {
+    try {
+      const { data } = await apiServicesQPS.post(`/services/by-cleaner/${user.id}?take=50`);
+
+        
+
+    } catch (error) {
+      console.log('error')
+    }
+
+  }
+
+  const getManagerServices = async () => {
+
+    const communities = await getCommunitiesByManager();
+    try {
+
+      const { data } = await apiServicesQPS.post('/services/by-communities?take=50', {communities});
+
+      data.data.forEach((service:Service) => {
+
+        filteredServices.all.data.push(service);
+
+        switch (service.statusId) {
+            case 'created':
+              filteredServices.created.data.push(service);
+                break;
+            case 'pending':
+              filteredServices.pending.data.push(service);
+                break;
+            case 'approved':
+              filteredServices.approved.data.push(service);
+                break;
+            case 'rejected':
+              filteredServices.rejected.data.push(service);
+                break;
+            case 'completed':
+              filteredServices.completed.data.push(service);
+                break;
+            case 'finished':
+              filteredServices.finished.data.push(service);
+                break;
+            default:
+                // Si el statusId no coincide con ninguno de los anteriores, no hacemos nada
+                break;
+        }
+    });
+
+
+    } catch (error) {
+      console.log(error)
+    }
+
+  }
 
   const filterServices = (data: Services, statusId: string) => {
     return (prevState: ServiceByStatusId) => {
@@ -392,15 +465,22 @@ const useServicesInformation = () => {
 
   useEffect(() => {
 
-    if(user.roleId === "1"){
+    if (user.roleId === "1") {
       getServices(1, "2");
-    }else{
+    } else {
       getServices(1, "2", user.id);
     }
 
     if (user.roleId !== "4") {
       fetchDataToCreateModal();
       getUsers();
+    }
+
+    if (user.roleId === "4") {
+      getCleanerServices();
+    }
+    if (user.roleId === "3") {
+      getManagerServices();
     }
 
   }, []);
@@ -457,6 +537,11 @@ const useServicesInformation = () => {
     setSelectedUser,
     isLoading,
     createNewService,
+
+    isRefreshing,
+    setIsRefreshing,
+    getCleanerServices,
+    getManagerServices
 
   };
 };
