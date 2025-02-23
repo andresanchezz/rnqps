@@ -7,41 +7,76 @@ import { ActivityIndicator, Text } from "react-native-paper";
 import { RefreshControl } from "react-native-gesture-handler";
 import CardService from "../../components/shared/card-task/CardService";
 import { Services } from "i18next";
+import { ServiceByStatusId } from "../../interfaces/services/services.interface";
 
 const HistoryScreen = () => {
 
     const { t } = useTranslation();
 
     const {
-        user,
-        filteredServices,
-        getServices,
-        getCleanerServices
+        handleGetData,
+        servicesByStatus,
+
+        isRefreshing,
+
     } = useServicesInformation();
 
+
+    let dataToShow = [
+        ...servicesByStatus.completed.data,
+        ...servicesByStatus.finished.data
+    ]
+
+    const handlePullRefresh = () => {
+
+
+        Promise.all([
+            handleGetData({ page: 1, statusId: "5" }, true),
+            handleGetData({ page: 1, statusId: "6" }, true)
+        ])
+
+
+    }
+
     useEffect(() => {
-        if (user.roleId === "4") {
-            getCleanerServices();
-        } else {
-            getServices(1)
-        }
+        Promise.all([
+            handleGetData({ page: 1, statusId: "5" }),
+            handleGetData({ page: 1, statusId: "6" })
+        ])
     }, [])
 
 
     return (
         <View style={styles.mainContainer}>
+
             <FlatList
-                style={styles.flatList}
-                data={filteredServices.all.data}
+                data={dataToShow}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <CardService service={item} />
+                    <CardService
+                        service={item}
+                    />
                 )}
+                //* FLAT LIST
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handlePullRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
                 onEndReached={() => {
-                    const currentPage = filteredServices.all.meta.page;
-                    getServices(currentPage + 1);
+
+                    const currentPageCompleted = servicesByStatus["completed"].meta.page || 1;
+                    const currentPageFinished = servicesByStatus["finished"].meta.page || 1;
+
+                    handleGetData({ page: currentPageCompleted + 1, statusId: "5" })
+                    handleGetData({ page: currentPageFinished + 1, statusId: "6" })
+
                 }}
             />
+
         </View>
     );
 };

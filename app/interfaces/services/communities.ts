@@ -1,4 +1,4 @@
-export interface Communities {
+export interface Community {
     id:            string;
     communityName: string;
     createdAt:     Date;

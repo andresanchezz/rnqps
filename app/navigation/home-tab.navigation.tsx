@@ -12,7 +12,7 @@ const Tab = createBottomTabNavigator();
 
 const HomeTabNavigation = () => {
 
-    const {t} = useTranslation();
+    const { t } = useTranslation();
 
     return (
         <Tab.Navigator
@@ -29,7 +29,11 @@ const HomeTabNavigation = () => {
             })}
         >
             <Tab.Screen options={{ title: `${t("services")}` }} name="ServicesScreen" component={ServicesScreen} />
-            <Tab.Screen options={{ title: `${t("history")}` }} name="HistoryScreen" component={HistoryScreen} />
+            <Tab.Screen options={{
+                title: `${t("history")}`,
+                headerShown: true,
+                headerTitleAlign: 'center'
+            }} name="HistoryScreen" component={HistoryScreen} />
             <Tab.Screen options={{ title: `${t("profile")}` }} name="ProfileScreen" component={ProfileScreen} />
         </Tab.Navigator>
     )

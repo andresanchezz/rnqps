@@ -1,31 +1,31 @@
 import React, { useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { Text, Avatar, IconButton } from "react-native-paper";
-import { Service } from "../../../interfaces/services/services.interface";
+import { DataService } from "../../../interfaces/services/services.interface";
 import useCardBehaviour from "./hooks/useCardBehaviour.hook";
 import { typography } from "../../../../styles/typography";
 import { useTranslation } from "react-i18next";
 
 interface CardServiceProps {
-    service: Service;
+    service: DataService;
     onAccept?: () => void;
     onReject?: () => void;
     onConfirm?: () => void;
-    onReassign?:()=>void;
+    onReassign?: () => void;
     hideButtons?: boolean;
-    userRole?: string; 
-    currentView?: string; 
+    userRole?: string;
+    currentView?: string;
 }
 
-const CardService: React.FC<CardServiceProps> = React.memo(({ 
-    service, 
-    onAccept, 
+const CardService: React.FC<CardServiceProps> = React.memo(({
+    service,
+    onAccept,
     onReject,
-    onReassign, 
-    onConfirm, 
+    onReassign,
+    onConfirm,
     hideButtons = false,
-    userRole, 
-    currentView 
+    userRole,
+    currentView
 }) => {
     const { toggleExpand, animatedHeight, isExpanded } = useCardBehaviour();
     const { t } = useTranslation();
@@ -34,7 +34,7 @@ const CardService: React.FC<CardServiceProps> = React.memo(({
     const showAcceptButton = userRole === "4" && currentView === "pending";
     const showRejectButton = userRole === "4" && currentView === "pending";
     const showConfirmButton = userRole === "4" && currentView === "approved";
-    const showReassign = userRole === "1"; 
+    const showReassign = userRole === "1";
 
     const handleAccept = useCallback(() => onAccept?.(), [onAccept]);
     const handleReject = useCallback(() => onReject?.(), [onReject]);

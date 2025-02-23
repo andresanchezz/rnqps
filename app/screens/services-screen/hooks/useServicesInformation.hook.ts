@@ -1,64 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 
-import * as Sentry from "@sentry/react-native";
-
-import * as SecureStore from 'expo-secure-store';
-
-import moment from 'moment';
-
-import Toast from 'react-native-toast-message';
-
-import { apiServicesQPS } from '../../../api/services-qps';
-
-import { Service, Services, ServiceByStatusId, ServiceStatus } from '../../../interfaces/services/services.interface';
-import { AUser, User } from '../../../interfaces/user/users';
-import { UserById } from '../../../interfaces/user/userById';
-
-import { Communities } from '../../../interfaces/services/communities';
-import { Extras } from '../../../interfaces/services/extras';
-import { CleaningTypes } from '../../../interfaces/services/types';
-
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
 
-import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '../../../state';
+import { apiServicesQPS } from '../../../api/services-qps';
+import { Community, DataService, Service, ServiceByStatusId, ServiceStatus } from '../../../interfaces/services/services.interface';
 
+import * as secureStore from 'expo-secure-store'
+import { UserById } from '../../../interfaces/user/userById';
 
-interface Option {
-  label: string;
-  value: string;
-}
 
 const useServicesInformation = () => {
 
-  const userString = SecureStore.getItem('userData');
+  const userString = secureStore.getItem('userData');
   const user: UserById = userString ? JSON.parse(userString) : null;
 
-  const [date, setDate] = useState(moment().toDate());
-  const [schedule, setSchedule] = useState(moment().toDate());
-  const [isDateSelected, setIsDateSelected] = useState<boolean>(false);
-  const [isScheduleSelected, setisScheduleSelected] = useState<boolean>(false);
-
-  const [unitySize, setUnitySize] = useState<string>();
-  const [unityNumber, setUnityNumber] = useState<string>();
-
-  const [comment, setComment] = useState<string>();
-
-  const [communityId, setCommunityId] = useState<string>();
-
-  const [typeId, setTypeId] = useState<string>();
-  const [extraId, setExtraId] = useState<string>();
-
-  const [selectedService, setSelectedService] = useState<Service>();
-  const [selectedUser, setSelectedUser] = useState<AUser | null>();
-
-  const [users, setUsers] = useState<User>();
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-
-  const [filteredServices, setFilteredServices] = useState<ServiceByStatusId>({
-    all: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
+  const [servicesByStatus, setServicesByStatus] = useState<ServiceByStatusId>({
     created: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
     pending: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
     approved: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
@@ -67,461 +24,170 @@ const useServicesInformation = () => {
     finished: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
   });
 
+  const [selectedService, setSelectedService] = useState<DataService>(); 
+
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
   const createBottomSheet = useRef<BottomSheetMethods>(null);
   const acceptBottomSheet = useRef<BottomSheetMethods>(null);
   const rejectBottomSheet = useRef<BottomSheetMethods>(null);
   const confirmBottomSheet = useRef<BottomSheetMethods>(null);
   const reassignBottomSheet = useRef<BottomSheetMethods>(null);
 
-  const [options, setOptions] = useState<{ communities: Option[], extras: Option[], cleaningTypes: Option[] }>({
-    communities: [],
-    cleaningTypes: [],
-    extras: [],
-  });
 
-  const { t } = useTranslation();
+  //* STATUS ID
 
-  const mapStatusByNumber = (statusString: string): ServiceStatus => {
+  const mapStatusId = (statusString: string): ServiceStatus => {
     const statusNumber = parseInt(statusString);
     const statusMap: { [key: number]: ServiceStatus } = {
-      1: 'created',
-      2: 'pending',
-      3: 'approved',
-      4: 'rejected',
-      5: 'completed',
-      6: 'finished',
+      "1": 'created',
+      "2": 'pending',
+      "3": 'approved',
+      "4": 'rejected',
+      "5": 'completed',
+      "6": 'finished',
     };
     return statusMap[statusNumber] || 'created';
   }
 
-  const getServices = async (page: number, statusId?: string, userId?: string, isRefreshing?: boolean) => {
+  const statusIdMap: Record<string, string | undefined> = {
+    created: "1",
+    pending: "2",
+    approved: "3",
+    rejected: "4",
+    completed: "5",
+    finished: "6",
+  };
+
+
+  const handleGetData = async({ statusId, page }: { statusId: string, page: number }, isRefreshing: boolean = false) => {
 
 
     if (isLoading) {
       return
     }
 
-    if (isRefreshing) {
-      setIsRefreshing(true)
-    }
 
+    const filter = mapStatusId(statusId);
+
+    setIsRefreshing(isRefreshing)
     setIsLoading(true);
 
-    if (isRefreshing && statusId) {
-      const filter = mapStatusByNumber(statusId);
-      filteredServices[filter].data = []
-      filteredServices[filter].meta = { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 }
+
+    if (isRefreshing) {
+      servicesByStatus[filter].data = []
+      servicesByStatus[filter].meta = { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 }
     }
 
-    if (isRefreshing && !statusId) {
-      filteredServices.all.data = []
-      filteredServices.all.meta = { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 }
-    }
-
-
-    let url = '';
-    let filter: ServiceStatus;
-
-    url = userId
-      ? `/services/by-user/${userId}/${statusId}?page=${page}`
-      : statusId
-        ? `/services/by-status/${statusId}?page=${page}`
-        : `/services?page=${page}`;
-
-
-    if (statusId) {
-      filter = mapStatusByNumber(statusId);
-
-      if (
-        !filteredServices[filter].meta.hasNextPage ||
-        page > filteredServices[filter].meta.pageCount ||
-        page === filteredServices[filter].meta.page
-      ) {
-        setIsLoading(false);
-        return;
-      }
-
-    } else {
-      if (
-        !filteredServices.all.meta.hasNextPage ||
-        page > filteredServices.all.meta.pageCount ||
-        page === filteredServices.all.meta.page
-      ) {
-        {
-          setIsLoading(false);
-          return;
-        }
-      }
-    }
-
-
-    try {
-
-      const { data } = await apiServicesQPS<Services>(url);
-
-      if (statusId) {
-        setFilteredServices(filterServices(data, statusId));
-      } else {
-        setFilteredServices(prevState => ({
-          ...prevState,
-          all: {
-            data: [...prevState.all.data, ...data.data],
-            meta: data.meta,
-          },
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching services:', error);
-      Sentry.captureException(error);
-    } finally {
-      setIsRefreshing(false);
+    if (
+      !servicesByStatus[filter].meta.hasNextPage ||
+      page > servicesByStatus[filter].meta.pageCount ||
+      page === servicesByStatus[filter].meta.page
+    ) {
       setIsLoading(false);
+      return;
     }
 
-  };
-
-  const getCleanerServices = async () => {
-    try {
-      const { data } = await apiServicesQPS.post(`/services/by-cleaner/${user.id}?take=50`);
-
-        
-
-    } catch (error) {
-      console.log('error')
+    switch (user?.roleId) {
+      case "1":
+        await getAdminServices({ statusId, page })
+        break
+      case "2":
+        console.log('rol pendiente')
+        break
+      case "3":
+        await getManagerServices()
+        break
+      case "4":
+        await  getCleanerServices({ statusId, page })
+        break
+      case "5":
+        console.log('rol pendiente')
+        break
     }
+
+    setIsLoading(false);
+    setIsRefreshing(false);
 
   }
 
+  const getAdminServices = async ({ statusId, page }: { statusId: string, page: number }) => {
+    try {
+      const { data } = await apiServicesQPS.get<Service>(`/services/by-status/${statusId}?page=${page}`);
+      filterServicesByStatus(data)
+      console.log(data.meta)
+    } catch (error) {
+      console.log('Error en getAdminServices', error)
+    }
+  }
+
+  const getCleanerServices = async ({ statusId, page }: { statusId: string, page: number }) => {
+    try {
+      const { data } = await apiServicesQPS.get<Service>(`/services/by-user/${user?.id}/${statusId}?page=${page}`);
+      filterServicesByStatus(data)
+    } catch (error) {
+      console.log('Error en getCleanerServices', error)
+    }
+  }
+
+  //Services by communities
   const getManagerServices = async () => {
 
     const communities = await getCommunitiesByManager();
-    try {
 
+    try {
       const { data } = await apiServicesQPS.post('/services/by-communities?take=50', {communities});
-
-      data.data.forEach((service:Service) => {
-
-        filteredServices.all.data.push(service);
-
-        switch (service.statusId) {
-            case 'created':
-              filteredServices.created.data.push(service);
-                break;
-            case 'pending':
-              filteredServices.pending.data.push(service);
-                break;
-            case 'approved':
-              filteredServices.approved.data.push(service);
-                break;
-            case 'rejected':
-              filteredServices.rejected.data.push(service);
-                break;
-            case 'completed':
-              filteredServices.completed.data.push(service);
-                break;
-            case 'finished':
-              filteredServices.finished.data.push(service);
-                break;
-            default:
-                // Si el statusId no coincide con ninguno de los anteriores, no hacemos nada
-                break;
-        }
-    });
-
-
+      filterServicesByStatus(data.data)
     } catch (error) {
-      console.log(error)
+      console.log('Error en getManagerServices', error)
     }
-
   }
 
-  const filterServices = (data: Services, statusId: string) => {
-    return (prevState: ServiceByStatusId) => {
-      const updatedState = { ...prevState };
+  const getCommunitiesByManager = async (): Promise<string[]> => {
 
-      const filter = mapStatusByNumber(statusId);
+    let communities: string[] = [];
 
-      updatedState[filter].data = [...updatedState[filter].data, ...data.data];
-      updatedState[filter].meta = data.meta;
-
-      return updatedState;
-    };
-  };
-
-  const getUsers = async (page: number = 1) => {
     try {
-      const { data } = await apiServicesQPS.get<User>(`/users?page=${page}`);
-      setUsers(data)
+      const { data } = await apiServicesQPS.get<Community[]>(`/communities/by-manager/${user?.id}`);
+      data.map((community) => communities.push(community.id))
+      return communities
     } catch (error) {
-      console.log(error)
+      console.log('Error en getCommunitiesByManager', error)
+      return []
     }
   }
 
-  const getCommunitiesByManager = async () => {
-    try {
-      const { data } = await apiServicesQPS.get<Communities[]>(`/communities/by-manager/${user.id}`);
-      return data.map(community => community.id);
-    } catch (error: any) {
-      console.error('Error fetching communities:', error.response?.data?.message || error.message);
-      throw error;
-    }
-  };
+  const filterServicesByStatus = (data: Service) => {
+    for (let i = 0; i < data.data.length; i++) {
+      const service = data.data[i];
 
-  const reassignService = async () => {
-    if (!selectedService || !selectedUser) {
-      console.log('hola')
-      return;
-    }
+      const statusKey = mapStatusId(service.statusId);
 
-    const updatedData = {
-      date: selectedService.date,
-      schedule: selectedService.schedule,
-      comment: selectedService.comment,
-      userComment: selectedService?.userComment,
-      unitySize: selectedService.unitySize,
-      unitNumber: selectedService.unitNumber,
-      communityId: selectedService.communityId,
-      typeId: selectedService.typeId,
-      statusId: selectedService?.statusId,
-      userId: selectedUser.id,
-    };
-
-
-    await apiServicesQPS.patch(`/services/${selectedService.id}`, updatedData);
-
-    acceptBottomSheet.current?.close();
-    rejectBottomSheet.current?.close();
-    confirmBottomSheet.current?.close();
-    reassignBottomSheet.current?.close();
-
-  }
-
-  //* BOTTOMSHEETS
-  const handleBottomSheetsActions = async (newStatus: string) => {
-    if (!selectedService) {
-      return;
-    }
-
-    if (newStatus === "5") {
-      const now = moment();
-
-      const selectedDate = moment(selectedService.date, 'YYYY-MM-DD');
-
-      const scheduleTime = moment(selectedService.schedule, 'HH:mm');
-
-      const selectedDateTime = selectedDate.set({
-        hour: scheduleTime.hour(),
-        minute: scheduleTime.minute()
-      });
-
-      if (now.isBefore(selectedDateTime)) {
-        Toast.show({
-          type: 'error',
-          text1: `${t("confirm")}`,
-          text2: `${t("confirmOnDateError")}`
-        });
-        return;
+      if (statusKey) {
+        servicesByStatus[statusKey].data.push(service);
+        servicesByStatus[statusKey].meta = data.meta
       }
     }
-
-    if (newStatus === "4" && !comment) {
-      Toast.show({
-        type: 'error',
-        text1: `${t("reject")}`,
-        text2: `${t("confirmOnRejectError")}`
-      });
-      return;
-    }
-
-    const updatedData = {
-      date: selectedService.date,
-      schedule: selectedService.schedule,
-      comment: selectedService.comment,
-      userComment: newStatus === "4" ? comment : selectedService.userComment,
-      unitySize: selectedService.unitySize,
-      unitNumber: selectedService.unitNumber,
-      communityId: selectedService.communityId,
-      typeId: selectedService.typeId,
-      statusId: newStatus,
-      userId: selectedService.userId,
-    };
-
-    try {
-
-      await apiServicesQPS.patch(`/services/${selectedService.id}`, updatedData);
-
-      acceptBottomSheet.current?.close();
-      rejectBottomSheet.current?.close();
-      confirmBottomSheet.current?.close();
-    } catch (error) {
-      console.log(error);
-      Sentry.captureException(error);
-    }
   };
 
+  //* BOTTOMSHEETS
   const openBottomSheet = (bottomSheetRef: React.RefObject<BottomSheetMethods>) => {
     bottomSheetRef.current?.expand();
+    console.log(selectedService?.id)
   };
 
-  //** Create service
-  const createNewService = async () => {
+  const handleBottomSheetsActions = async (newStatus: string) => {
 
-    const newService = {
+    console.log(selectedService?.id)
 
-      date,
-      schedule,
-      comment,
-      userComment: '',
-      unitySize,
-      unitNumber: unityNumber,
-      communityId,
-      typeId,
-      statusId: '1',
-      extraId,
-
-    };
-
-    try {
-
-      const data = await apiServicesQPS.post('/services', newService);
-
-    } catch (error: any) {
-      console.log(error);
-      Sentry.captureMessage(error);
-    }
-    createBottomSheet.current?.close();
   };
 
-  const getExtrasList = async () => {
-    let data;
-    try {
-      data = (await apiServicesQPS.get<Extras>('/extras')).data;
-    } catch (error: any) {
-      console.log(error);
-      Sentry.captureMessage(error);
-    }
-    return data;
-  };
-
-  const getTypesList = async () => {
-    let data;
-    try {
-      data = (await apiServicesQPS.get<CleaningTypes>('/types')).data;
-    } catch (error: any) {
-      Sentry.captureMessage(error);
-    }
-    return data;
-  };
-
-  const getCommunitiesList = async () => {
-    let data;
-    try {
-      data = (await apiServicesQPS.get<Communities[]>(`/communities/by-manager/${user?.id}`)).data;
-      return data
-    } catch (error: any) {
-      Sentry.captureMessage(error);
-      return [];
-    } finally {
-
-    }
-  };
-
-  const fetchDataToCreateModal = async () => {
-
-    const typesList = await getTypesList();
-    const communitiesList = await getCommunitiesList();
-    const extrasList = await getExtrasList();
-
-    let cleaningTypeOptions: Option[] = [];
-    let communityOptions: Option[] = [];
-    let extrasOptions: Option[] = [];
-
-    if (typesList) {
-      cleaningTypeOptions = typesList.data.map((type) => ({
-        label: type.cleaningType,
-        value: type.id,
-      }));
-    }
-
-    if (communitiesList) {
-      communityOptions = communitiesList.map((community) => (
-        {
-          label: community.communityName,
-          value: community.id,
-        }))
-    }
-
-    if (extrasList) {
-      extrasOptions = extrasList.data.map((extra) => ({
-        label: extra.item,
-        value: extra.id,
-      }));
-    }
-
-    setOptions({ communities: communityOptions, extras: extrasOptions, cleaningTypes: cleaningTypeOptions });
-    console.log(communityOptions)
-  };
-
-
-  useEffect(() => {
-
-    if (user.roleId === "1") {
-      getServices(1, "2");
-    } else {
-      getServices(1, "2", user.id);
-    }
-
-    if (user.roleId !== "4") {
-      fetchDataToCreateModal();
-      getUsers();
-    }
-
-    if (user.roleId === "4") {
-      getCleanerServices();
-    }
-    if (user.roleId === "3") {
-      getManagerServices();
-    }
-
-  }, []);
+  
 
   return {
     user,
-
-    schedule,
-    setSchedule,
-    isScheduleSelected,
-    setisScheduleSelected,
-
-    date,
-    setDate,
-
-    isDateSelected,
-    setIsDateSelected,
-
-    comment,
-    setComment,
-
-    unitySize,
-    setUnitySize,
-
-    unityNumber,
-    setUnityNumber,
-
-    communityId,
-    setCommunityId,
-
-    typeId,
-    setTypeId,
-
-    extraId,
-    setExtraId,
-
-    setSelectedService,
-    getServices,
-
-    options,
-    filteredServices,
 
     acceptBottomSheet,
     rejectBottomSheet,
@@ -530,20 +196,21 @@ const useServicesInformation = () => {
     reassignBottomSheet,
     openBottomSheet,
 
-    handleBottomSheetsActions,
-    users,
-    reassignService,
-    selectedUser,
-    setSelectedUser,
-    isLoading,
-    createNewService,
+    statusIdMap,
 
+    servicesByStatus,
+    handleGetData,
+
+    isLoading,
     isRefreshing,
-    setIsRefreshing,
-    getCleanerServices,
-    getManagerServices
+
+    setSelectedService,
+    selectedService,
+    
+    handleBottomSheetsActions
 
   };
+
 };
 
 export default useServicesInformation;

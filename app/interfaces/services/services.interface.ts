@@ -1,11 +1,11 @@
 import { Meta } from "../meta.interface";
 
-export interface Services {
-    data: Service[];
+export interface Service {
+    data: DataService[];
     meta: Meta;
 }
 
-export interface Service {
+export interface DataService {
     id: string;
     date: string;
     schedule: null;
@@ -53,15 +53,14 @@ export interface Type {
 }
 
 export interface ServiceByStatusId {
-    all: Services,
-    created: Services;
-    pending: Services;
-    approved: Services;
-    rejected: Services;
-    completed: Services;
-    finished: Services;
+    created: Service;
+    pending: Service;
+    approved: Service;
+    rejected: Service;
+    completed: Service;
+    finished: Service;
 }
 
 
-export type ServiceStatus = 'created' | 'pending' | 'approved' | 'rejected' | 'completed' | 'finished';
+export type ServiceStatus = 'created' | 'pending' | 'approved' | 'rejected' | 'completed' | 'finished'; 
 

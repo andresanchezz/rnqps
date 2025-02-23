@@ -33,4 +33,5 @@ export const modalStyles = StyleSheet.create({
     inputSpacing:{
         height: 20
     }
+    
 });
