@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { colors } from "./colors";
-import { typography } from "./typography";
+
 
 
 const buttonPadding = 10;
@@ -16,7 +16,6 @@ export const buttonStyles = StyleSheet.create({
     buttonText: {
         textAlign: "center",
         color: colors.buttonText,
-        ...typography.bodyLarge.bold,
     },
 });
 
@@ -24,12 +23,7 @@ export const modalStyles = StyleSheet.create({
     area:{
         padding: 20
     },
-    title:{
-        ...typography.bodyLarge.bold
-    },
-    text:{
-        ...typography.bodyLarge.regular
-    },
+
     inputSpacing:{
         height: 20
     }

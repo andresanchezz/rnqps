@@ -3,15 +3,18 @@ import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
 import { apiServicesQPS } from '../../../api/services-qps';
 import { Community, DataService, Service, ServiceByStatusId, ServiceStatus } from '../../../interfaces/services/services.interface';
 import * as secureStore from 'expo-secure-store';
-import { UserById } from '../../../interfaces/user/userById';
+import { Cleaner, DataCleaner } from '../../../interfaces/user/userById';
 import { Extras } from '../../../interfaces/services/extras';
-import { CleaningTypes, CommunityName } from '../../../interfaces/services/types';
+import { CleaningTypes } from '../../../interfaces/services/types';
 import moment from 'moment';
+import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 
 const useServicesInformation = () => {
   const userString = secureStore.getItem('userData');
-  const user: UserById = userString ? JSON.parse(userString) : null;
+  const user: DataCleaner = userString ? JSON.parse(userString) : null;
 
+  //* Service(s)
   const [servicesByStatus, setServicesByStatus] = useState<ServiceByStatusId>({
     created: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
     pending: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
@@ -20,8 +23,9 @@ const useServicesInformation = () => {
     completed: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
     finished: { data: [], meta: { hasNextPage: true, hasPreviousPage: false, page: 0, pageCount: 1, take: 10, totalCount: 0 } },
   });
-
   const [selectedService, setSelectedService] = useState<DataService | null>(null);
+
+  const { t } = useTranslation();
 
   //* CREATE SERVICE / REJECT SERVICE
 
@@ -34,10 +38,18 @@ const useServicesInformation = () => {
 
   const [date, setDate] = useState(new Date());
   const [isDateSelected, setIsDateSelected] = useState(false);
-  
+
   const [schedule, setSchedule] = useState(new Date());
   const [isScheduleSelected, setIsScheduleSelected] = useState(false);
 
+  //* CLEANERS LIST
+
+  const [cleanersList, setCleanersList] = useState<DataCleaner[]>([]);
+  const [filteredCleanersList, setFilteredCleanersList] = useState<DataCleaner[]>([]);
+  const [filterQuery, setFilterquery] = useState<string>('');
+  const [selectedCleaner, setSelectedCleaner] = useState<DataCleaner>();
+
+  //* Statuses (LIFE CICLE NO QPS DATA)
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -209,8 +221,6 @@ const useServicesInformation = () => {
     } catch (error: any) {
       /* Sentry.captureMessage(error); */
       return [];
-    } finally {
-
     }
   };
 
@@ -249,7 +259,33 @@ const useServicesInformation = () => {
     }
   };
 
+  const getCleanersList = async (page?: number) => {
 
+    try {
+      const { data } = await apiServicesQPS.get<Cleaner>(`/users?take=50`);
+      setCleanersList(data.data)
+    } catch (error: any) {
+      console.log(error)
+      /* Sentry.captureMessage(error); */
+      return [];
+    }
+  }
+
+  //*Filter search
+
+  const filterCleaner = (text: string) => {
+
+    setFilterquery(text);
+    
+    if (text.trim() !== '') {
+      const filteredList = cleanersList.filter((cleaner) =>
+        cleaner.name.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredCleanersList(filteredList);
+    } else {
+      setFilteredCleanersList(cleanersList);
+    }
+  };
 
   //* BOTTOMSHEETS
   const openBottomSheet = (bottomSheetRef: React.RefObject<BottomSheetMethods>, service?: DataService) => {
@@ -259,11 +295,98 @@ const useServicesInformation = () => {
     bottomSheetRef.current?.expand();
   };
 
-  const handleBottomSheetsActions = async (newStatus: string) => {
+  const handleBottomSheetsActions = async (newStatus: string, bottomSheetRef: React.RefObject<BottomSheetMethods>) => {
+    if (!selectedService) {
+      return;
+    }
+
+    switch (newStatus) {
+
+      case "4":
+
+        if (!comment) {
+          Toast.show({
+            type: 'error',
+            text1: `${t("reject").toUpperCase()}`,
+            text2: `${t("confirmOnRejectError")}`
+          });
+          return;
+        }
+
+        break;
+      case "5":
+
+        const now = moment();
+        const selectedDate = moment(selectedService.date, 'YYYY-MM-DD');
+        const scheduleTime = moment(selectedService.schedule, 'HH:mm');
+
+        const selectedDateTime = selectedDate.set({
+          hour: scheduleTime.hour(),
+          minute: scheduleTime.minute()
+        });
+
+        if (now.isBefore(selectedDateTime)) {
+          Toast.show({
+            type: 'error',
+            text1: `${t("confirm")}`,
+            text2: `${t("confirmOnDateError")}`
+          });
+          return;
+        }
 
 
+        break;
 
+    }
+
+    const updatedData = {
+      date: selectedService.date,
+      schedule: selectedService.schedule,
+      comment: selectedService.comment,
+      userComment: newStatus === "4" ? comment : selectedService.userComment,
+      unitySize: selectedService.unitySize,
+      unitNumber: selectedService.unitNumber,
+      communityId: selectedService.communityId,
+      typeId: selectedService.typeId,
+      statusId: newStatus,
+      userId: selectedService.userId,
+    };
+
+    try {
+
+      await apiServicesQPS.patch(`/services/${selectedService.id}`, updatedData);
+
+      let currentStatus = mapStatusId(selectedService.statusId);
+
+      const updatedServices = servicesByStatus[currentStatus].data.filter(
+        (service) => service.id !== selectedService.id
+      );
+
+      setServicesByStatus((prevState) => ({
+        ...prevState,
+        [currentStatus]: {
+          ...prevState[currentStatus],
+          data: updatedServices,
+        }
+      }));
+
+      setSelectedService(null)
+
+      bottomSheetRef.current?.close();
+
+
+    } catch (error) {
+      console.log(error);
+      /* Sentry.captureException(error); */
+    }
   };
+
+  useEffect(() => {
+    if (user.roleId === "1") {
+      getCleanersList();
+    }
+  }, [servicesByStatus])
+
 
   return {
     user,
@@ -298,6 +421,10 @@ const useServicesInformation = () => {
 
     communityId,
     setCommunityId,
+
+    filterCleaner,
+    filteredCleanersList,
+    filterQuery,
 
     date,
     setDate,

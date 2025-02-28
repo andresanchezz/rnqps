@@ -5,10 +5,12 @@ import Toast from 'react-native-toast-message';
 import { AuthResponse } from '../../../interfaces/auth/auth';
 import { apiServicesQPS } from '../../../api/services-qps';
 import { useState } from 'react';
-import { useAuthStore } from '../../../state';
-import { UserById } from '../../../interfaces/user/userById';
+import { useAuthStore, useLoadingStore } from '../../../state';
+import { DataCleaner } from '../../../interfaces/user/userById';
 
 const useLoginScreenHook = () => {
+
+  const { setIsLoading } = useLoadingStore();
 
   const { setToken, setUser } = useAuthStore();
   const [username, setEmail] = useState('');
@@ -27,6 +29,7 @@ const useLoginScreenHook = () => {
     }
 
     try {
+      setIsLoading(true)
       const { data: { token, email, id } } = await apiServicesQPS.post<AuthResponse>('/auth', {
         username: username,
         password: password,
@@ -41,14 +44,16 @@ const useLoginScreenHook = () => {
       setToken(token);
 
     } catch (error: any) {
-      
+
       Toast.show({
         type: 'error',
         text1: error.response.data.error,
         text2: error.response.data.message
       })
 
-       Sentry.captureMessage(error) 
+      Sentry.captureMessage(error)
+    } finally {
+      setIsLoading(false)
     }
   };
 

@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { Text, Avatar, IconButton } from "react-native-paper";
 import { DataService } from "../../../interfaces/services/services.interface";
 import useCardBehaviour from "./hooks/useCardBehaviour.hook";
-import { typography } from "../../../../styles/typography";
+
 import { useTranslation } from "react-i18next";
 
 interface CardServiceProps {
@@ -86,12 +86,12 @@ const CardService: React.FC<CardServiceProps> = React.memo(({
                             },
                         ]}
                     >
-                        <Text style={typography.bodyLarge.bold}>{t("comment")}: <Text>{service.comment || "N/A"}</Text></Text>
-                        <Text style={typography.bodyLarge.bold}>{t("schedule")}: <Text>{service.schedule || "N/A"}</Text></Text>
-                        <Text style={typography.bodyLarge.bold}>{t("communityName")}: <Text>{service.community?.communityName || "N/A"}</Text></Text>
-                        <Text style={typography.bodyLarge.bold}>{t("status")}: <Text>{service.status?.statusName || "N/A"}</Text></Text>
-                        <Text style={typography.bodyLarge.bold}>{t("user")} ID: <Text>{service.userId || "N/A"}</Text></Text>
-                        <Text style={typography.bodyLarge.bold}>{t("service")} ID: <Text>{service.id}</Text></Text>
+                        <Text variant="bodyMedium" >{t("comment")}: <Text>{service.comment || "N/A"}</Text></Text>
+                        <Text variant="bodyMedium" >{t("schedule")}: <Text>{service.schedule || "N/A"}</Text></Text>
+                        <Text variant="bodyMedium" >{t("communityName")}: <Text>{service.community?.communityName || "N/A"}</Text></Text>
+                        <Text variant="bodyMedium" >{t("status")}: <Text>{service.status?.statusName || "N/A"}</Text></Text>
+                        <Text variant="bodyMedium" >{t("user")} ID: <Text>{service.userId || "N/A"}</Text></Text>
+                        <Text variant="bodyMedium" >{t("service")} ID: <Text>{service.id}</Text></Text>
                     </Animated.View>
                 )}
             </Animated.View>

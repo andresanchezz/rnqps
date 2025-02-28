@@ -4,8 +4,9 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
   Pressable,
+  ScrollView,
+  TouchableOpacity,
 } from "react-native";
 
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -25,6 +26,7 @@ import { TabRoute } from "../../interfaces/tab_route.interface";
 
 import MyCustomBottomSheet from "../../components/shared/bottom-sheet/MyCustomBottomSheet";
 import CardService from "../../components/shared/card-task/CardService";
+import { LoadingButton } from "../../components/LoadingButton";
 
 const ServicesScreen = () => {
   const {
@@ -55,6 +57,10 @@ const ServicesScreen = () => {
     setExtraId,
     communityId,
     setCommunityId,
+    filterCleaner,
+    filteredCleanersList,
+    filterQuery,
+
     date,
     setDate,
     schedule,
@@ -67,6 +73,7 @@ const ServicesScreen = () => {
   //* DATE Y TIME PICKER 
   const [showDate, setShowDate] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
+
 
   const toggleDatePicker = () => {
     setShowDate(!showDate);
@@ -222,6 +229,7 @@ const ServicesScreen = () => {
       case "3":
         handleGetData({ statusId: "1", page: 1 });
         fetchDataToCreateModal();
+
         break;
       case "4":
         handleGetData({ statusId: "2", page: 1 });
@@ -232,10 +240,11 @@ const ServicesScreen = () => {
 
     const routes = getTabRoutesByRole(user?.roleId || "");
     setRoutes(routes);
-  }, []);
+  }, [servicesByStatus, index]);
 
   return (
     <View style={styles.mainContainer}>
+
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}
@@ -355,7 +364,79 @@ const ServicesScreen = () => {
           <View />
         </View>
       </MyCustomBottomSheet>
+
+      {/*Accept service*/}
+      <MyCustomBottomSheet ref={acceptBottomSheet} snapPoints={['15%', '25%']}>
+
+        <View style={{ flex: 1 }}>
+          <Text style={styles.buttonSheetText} variant="headlineSmall">{t('acceptService')}</Text>
+          <Text style={styles.buttonSheetText} variant="bodyMedium">{t('textAcceptService')}</Text>
+        </View>
+
+        <LoadingButton label="acceptService" onPress={() => { handleBottomSheetsActions('3', acceptBottomSheet) }} />
+
+      </MyCustomBottomSheet>
+
+      {/*Reject service*/}
+      <MyCustomBottomSheet ref={rejectBottomSheet} snapPoints={['15%', '30%']}>
+
+        <View style={{ flex: 1 }}>
+          <Text style={styles.buttonSheetText} variant="headlineSmall">{t('rejectService')}</Text>
+          <Text style={styles.buttonSheetText} variant="bodyMedium">{t('textRejectService')}</Text>
+
+          <TextInput onChangeText={(text) => setComment(text)} mode="outlined"></TextInput>
+
+        </View>
+
+        <LoadingButton label="rejectService" onPress={() => { handleBottomSheetsActions('4', rejectBottomSheet) }} />
+
+      </MyCustomBottomSheet>
+
+      {/*Confirm service*/}
+      <MyCustomBottomSheet ref={confirmBottomSheet} snapPoints={['15%', '20%']}>
+
+        <View style={{ flex: 1 }}>
+          <Text style={styles.buttonSheetText} variant="headlineSmall">{t('confirmService')}</Text>
+          <Text style={styles.buttonSheetText} variant="bodyMedium">{t('textConfirmService')}</Text>
+        </View>
+
+        <LoadingButton label="confirmService" onPress={() => { handleBottomSheetsActions('5', confirmBottomSheet) }} />
+
+      </MyCustomBottomSheet>
+
+      {/*Reassign service*/}
+      <MyCustomBottomSheet ref={reassignBottomSheet} snapPoints={['15%', '55%']}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.buttonSheetText} variant="headlineSmall">{t('reassignService')}</Text>
+          <Text style={styles.buttonSheetText} variant="bodyMedium">{t('textReassignService')}</Text>
+
+          <TextInput
+            onChangeText={(value) => { filterCleaner(value) }}
+            mode="outlined"
+            label="Search"
+            value={filterQuery}
+          />
+
+          <View style={styles.cleanersList}>
+            <ScrollView>
+              {filteredCleanersList?.map((cleaner) => (
+                <TouchableOpacity style={styles.cleanersListItem} key={cleaner.id}>
+                  <Text> {cleaner.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+
+        </View>
+
+        <LoadingButton label="reassignService" onPress={() => { handleBottomSheetsActions('5', confirmBottomSheet) }} />
+
+      </MyCustomBottomSheet>
+
+
     </View>
+
   );
 };
 
@@ -371,6 +452,20 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: 16,
   },
+  buttonSheetText: {
+    textAlign: 'center',
+    marginBottom: 8
+  },
+  cleanersList: {
+    height: 220,
+    marginVertical: 15
+  },
+  cleanersListItem: {
+    padding: 8,
+    marginVertical: 3,
+  }
+
+
 });
 
 export default ServicesScreen;

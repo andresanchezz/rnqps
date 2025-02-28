@@ -7,10 +7,10 @@ import { StatusBar } from 'expo-status-bar';
 import useLoginScreenHook from './hooks/useLoginScreen.hook';
 
 import { RootParamList } from '../../navigation/kickoff-stack.navigation';
-import { typography } from '../../../styles/typography';
 import { buttonStyles } from '../../../styles/styles';
 import { colors } from '../../../styles/colors';
 import { useTranslation } from 'react-i18next';
+import { LoadingButton } from '../../components/LoadingButton';
 
 export type LoginScreenNavigationProp = StackNavigationProp<RootParamList, 'LoginScreen'>;
 
@@ -34,8 +34,8 @@ const LoginScreen = () => {
         />
 
         <View style={{ flex: 1, justifyContent: 'space-evenly' }}>
-          <Text style={{ textAlign: 'center', ...typography.headingLarge.black, color: colors.primary }}>
-          {t('welcome')}
+          <Text style={{ textAlign: 'center', color: colors.primary }}>
+            {t('welcome')}
           </Text>
           <View>
             <TextInput
@@ -55,9 +55,9 @@ const LoginScreen = () => {
               mode="outlined"
             />
           </View>
-          <TouchableOpacity style={buttonStyles.button} onPress={handleLogin}>
-            <Text style={buttonStyles.buttonText}>{t('signIn')}</Text>
-          </TouchableOpacity>
+
+          <LoadingButton label='Sign in' onPress={handleLogin} />
+
         </View>
       </ScrollView>
       <StatusBar style="auto" />

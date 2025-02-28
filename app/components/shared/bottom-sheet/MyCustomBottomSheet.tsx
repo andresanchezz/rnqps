@@ -4,9 +4,9 @@ import CustomBottomSheet, {
     BottomSheetBackdrop,
     BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
-import { typography } from '../../../../styles/typography';
+
 import { colors } from '../../../../styles/colors';
 
 interface BottomSheetProps {
@@ -45,7 +45,9 @@ const MyCustomBottomSheet = forwardRef<CustomBottomSheet, BottomSheetProps>(
             >
                 <PaperProvider>
                     <BottomSheetView style={styles.bottomSheetContent}>
+                        <View style={{flex:1}}>
                         {children}
+                        </View>
                     </BottomSheetView>
                 </PaperProvider>
             </CustomBottomSheet>
@@ -62,7 +64,7 @@ const styles = StyleSheet.create({
         padding: 20
     },
     bottomSheetTitle: {
-        ...typography.headingMedium.bold,
+
         textAlign: 'center',
     },
 });
