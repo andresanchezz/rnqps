@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -12,8 +12,8 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { TabBar, TabView } from "react-native-tab-view";
-import { FAB, Text, TextInput } from "react-native-paper";
-import { Dropdown } from "react-native-paper-dropdown";
+import { ActivityIndicator, FAB, Text, TextInput } from "react-native-paper";
+import { Dropdown, DropdownInput } from "react-native-paper-dropdown";
 
 import { useTranslation } from "react-i18next";
 
@@ -27,6 +27,8 @@ import { TabRoute } from "../../interfaces/tab_route.interface";
 import MyCustomBottomSheet from "../../components/shared/bottom-sheet/MyCustomBottomSheet";
 import CardService from "../../components/shared/card-task/CardService";
 import { LoadingButton } from "../../components/LoadingButton";
+import { FullScreenModal } from "../../components/shared/FullScreenModal";
+
 
 const ServicesScreen = () => {
   const {
@@ -41,9 +43,9 @@ const ServicesScreen = () => {
     servicesByStatus,
     handleGetData,
     fetchDataToCreateModal,
-    isLoading,
+
     isRefreshing,
-    setSelectedService,
+
     handleBottomSheetsActions,
     comment,
     setComment,
@@ -66,6 +68,12 @@ const ServicesScreen = () => {
     schedule,
     setSchedule,
     options,
+    selectedCleaner,
+    setSelectedCleaner,
+
+    reassignService,
+    isLoading
+
   } = useServicesInformation();
 
   const { t } = useTranslation();
@@ -126,6 +134,7 @@ const ServicesScreen = () => {
     key: string;
     title: string;
   };
+
 
   const [routes, setRoutes] = useState<Route[]>([]);
   const [index, setIndex] = useState<number>(0);
@@ -206,6 +215,27 @@ const ServicesScreen = () => {
             const currentPage = servicesByStatus[route.key as keyof ServiceByStatusId]!.meta.page || 1;
             handleGetData({ page: currentPage + 1, statusId: statusIdMap[route.key as keyof typeof servicesByStatus]! });
           }}
+          ListFooterComponent={
+            <View>
+
+              {
+                servicesByStatus[route.key as keyof ServiceByStatusId]?.meta.hasNextPage
+                  ? isLoading
+                    ? (
+                      <View style={styles.footer}>
+                        <ActivityIndicator size={30} />
+                      </View>
+                    )
+                    : null
+                  : (
+                    <View style={styles.footer}>
+                      <Text variant="bodyLarge" style={styles.textCenter}>{t("noMoreServices")}</Text>
+                    </View>
+                  )
+              }
+
+            </View>
+          }
         />
       </View>
     );
@@ -242,6 +272,8 @@ const ServicesScreen = () => {
     setRoutes(routes);
   }, [servicesByStatus, index]);
 
+  const [xd, setXd] = useState(true);
+
   return (
     <View style={styles.mainContainer}>
 
@@ -259,110 +291,115 @@ const ServicesScreen = () => {
       )}
 
       {/*Create service*/}
-      <MyCustomBottomSheet ref={createBottomSheet} snapPoints={['50%', '90%']}>
-        <View>
-          <Text>{t('createService')}</Text>
+      <MyCustomBottomSheet ref={createBottomSheet} snapPoints={['50%', '95%']}>
+        <ScrollView style={styles.mainContainer}>
+          <View style={styles.mainContainer}>
+            <Text style={styles.buttonSheetText} variant="headlineSmall">{t('createService')}</Text>
 
-          {/* Selector de fecha */}
-          <Pressable onPress={toggleDatePicker}>
+            {/* Selector de fecha */}
+            <Pressable onPress={toggleDatePicker}>
+              <TextInput
+                mode="outlined"
+                placeholder={t("selectDate")}
+                value={formattedDate}
+                editable={false}
+              />
+            </Pressable>
+
+            {showDate && (
+              <DateTimePicker
+                mode="date"
+                display="spinner"
+                value={date}
+                onChange={onChangeDate}
+                minimumDate={new Date()}
+              />
+            )}
+
+            {/* Selector de hora */}
+            <Pressable onPress={toggleSchedulePicker}>
+              <TextInput
+                mode="outlined"
+                placeholder={t("selectTime")}
+                value={formattedTime}
+                editable={false}
+              />
+            </Pressable>
+
+            {showSchedule && (
+              <DateTimePicker
+                mode="time"
+                display="spinner"
+                value={schedule}
+                onChange={onChangeSchedule}
+                minimumDate={new Date()}
+              />
+            )}
+
+
+            <Dropdown
+              mode="outlined"
+              label={t('unitSize')}
+              placeholder={t('selectUnitSize')}
+              options={[
+                { label: `1 ${t('bedroom')}`, value: "1 Bedroom" },
+                { label: `2 ${t('bedroom')}`, value: "2 Bedroom" },
+                { label: `3 ${t('bedroom')}`, value: "3 Bedroom" },
+                { label: `4 ${t('bedroom')}`, value: "4 Bedroom" },
+                { label: `5 ${t('bedroom')}`, value: "5 Bedroom" },
+              ]}
+              value={unitySize}
+              onSelect={(value: string | undefined) => setUnitySize(value)}
+            />
+            <View />
             <TextInput
               mode="outlined"
-              placeholder={t("selectDate")}
-              value={formattedDate}
-              editable={false}
+              placeholder={t('unitNumber')}
+              inputMode="numeric"
+              value={unityNumber}
+              onChangeText={(text) => setUnityNumber(text)}
             />
-          </Pressable>
-
-          {showDate && (
-            <DateTimePicker
-              mode="date"
-              display="spinner"
-              value={date}
-              onChange={onChangeDate}
-              minimumDate={new Date()}
+            <View />
+            <Dropdown
+              mode="outlined"
+              label={t('community')}
+              placeholder={t("selectCommunity")}
+              options={options?.communities}
+              value={communityId}
+              onSelect={(value) => setCommunityId(value)}
             />
-          )}
+            <View />
+            <Dropdown
+              mode="outlined"
+              label={t("type")}
+              placeholder={t("selectType")}
+              options={options?.cleaningTypes}
+              value={typeId}
+              onSelect={(value) => setTypeId(value)}
+            />
 
-          {/* Selector de hora */}
-          <Pressable onPress={toggleSchedulePicker}>
+            <View />
+            <Dropdown
+              mode="outlined"
+              label="Extras"
+              placeholder={t("selectExtras")}
+              options={options?.extras}
+              value={extraId}
+              onSelect={(value) => setExtraId(value)}
+            />
+            <View />
             <TextInput
               mode="outlined"
-              placeholder={t("selectTime")}
-              value={formattedTime}
-              editable={false}
+              placeholder={t("comment")}
+              numberOfLines={4}
+              value={comment}
+              onChangeText={(text) => setComment(text)}
             />
-          </Pressable>
+            <View />
 
-          {showSchedule && (
-            <DateTimePicker
-              mode="time"
-              display="spinner"
-              value={schedule}
-              onChange={onChangeSchedule}
-              minimumDate={new Date()}
-            />
-          )}
-
-
-          <Dropdown
-            mode="outlined"
-            label={t('unitSize')}
-            placeholder={t('selectUnitSize')}
-            options={[
-              { label: `1 ${t('bedroom')}`, value: "1 Bedroom" },
-              { label: `2 ${t('bedroom')}`, value: "2 Bedroom" },
-              { label: `3 ${t('bedroom')}`, value: "3 Bedroom" },
-              { label: `4 ${t('bedroom')}`, value: "4 Bedroom" },
-              { label: `5 ${t('bedroom')}`, value: "5 Bedroom" },
-            ]}
-            value={unitySize}
-            onSelect={(value: string | undefined) => setUnitySize(value)}
-          />
-          <View />
-          <TextInput
-            mode="outlined"
-            placeholder={t('unitNumber')}
-            inputMode="numeric"
-            value={unityNumber}
-            onChangeText={(text) => setUnityNumber(text)}
-          />
-          <View />
-          <Dropdown
-            mode="outlined"
-            label={t('community')}
-            placeholder={t("selectCommunity")}
-            options={options?.communities}
-            value={communityId}
-            onSelect={(value) => setCommunityId(value)}
-          />
-          <View />
-          <Dropdown
-            mode="outlined"
-            label={t("type")}
-            placeholder={t("selectType")}
-            options={options?.cleaningTypes}
-            value={typeId}
-            onSelect={(value) => setTypeId(value)}
-          />
-          <View />
-          <Dropdown
-            mode="outlined"
-            label="Extras"
-            placeholder={t("selectExtras")}
-            options={options?.extras}
-            value={extraId}
-            onSelect={(value) => setExtraId(value)}
-          />
-          <View />
-          <TextInput
-            mode="outlined"
-            placeholder={t("comment")}
-            numberOfLines={4}
-            value={comment}
-            onChangeText={(text) => setComment(text)}
-          />
-          <View />
-        </View>
+          </View>
+          <LoadingButton label={t("create")} onPress={() => { reassignService(reassignBottomSheet) }} />
+        </ScrollView>
       </MyCustomBottomSheet>
 
       {/*Accept service*/}
@@ -420,9 +457,14 @@ const ServicesScreen = () => {
           <View style={styles.cleanersList}>
             <ScrollView>
               {filteredCleanersList?.map((cleaner) => (
-                <TouchableOpacity style={styles.cleanersListItem} key={cleaner.id}>
-                  <Text> {cleaner.name}</Text>
+
+                <TouchableOpacity
+                  onPress={() => { setSelectedCleaner(cleaner) }}
+                  style={[styles.cleanersListItem, selectedCleaner?.id === cleaner.id && styles.selectedCleaner]} key={cleaner.id}>
+
+                  <Text variant="bodyMedium" style={selectedCleaner?.id === cleaner.id && { color: colors.light }}> {cleaner.name}</Text>
                 </TouchableOpacity>
+
               ))}
             </ScrollView>
           </View>
@@ -430,9 +472,18 @@ const ServicesScreen = () => {
 
         </View>
 
-        <LoadingButton label="reassignService" onPress={() => { handleBottomSheetsActions('5', confirmBottomSheet) }} />
+        <LoadingButton label="reassignService" onPress={() => { reassignService(reassignBottomSheet) }} />
 
       </MyCustomBottomSheet>
+
+
+
+      {/* <FullScreenModal onClose={() => { setXd(false) }} visible={xd}>
+
+              <TextInput></TextInput>
+
+        <LoadingButton label="confirmService" onPress={() => { handleBottomSheetsActions('5', confirmBottomSheet) }} />
+      </FullScreenModal> */}
 
 
     </View>
@@ -460,9 +511,22 @@ const styles = StyleSheet.create({
     height: 220,
     marginVertical: 15
   },
+  cleanersListCreate: {
+    height: 120,
+    marginVertical: 15
+  },
   cleanersListItem: {
     padding: 8,
     marginVertical: 3,
+  },
+  selectedCleaner: {
+    backgroundColor: colors.secondary
+  },
+  footer: {
+    paddingVertical: 10
+  },
+  textCenter: {
+    textAlign: 'center'
   }
 
 

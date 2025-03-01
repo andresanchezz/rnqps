@@ -15,17 +15,17 @@ const useProfile = () => {
 
     const { i18n } = useTranslation();
     const store = useAuthStore();
-    const {  user } = useAuthStore();
+    const { user } = useAuthStore();
 
     const handleSignOut = async () => {
 
-         store.signOut();
+        store.signOut();
     }
 
-    const changeLanguage = async (lng:string) => {
+    const changeLanguage = async (lng: string) => {
         await i18n.changeLanguage(lng);
-        await SecureStore.setItemAsync('userLanguage', lng); 
-      };
+        await SecureStore.setItemAsync('userLanguage', lng);
+    };
 
 
     return {

@@ -61,5 +61,7 @@
   "all": "Todas",
   "selectLanguage": "Selecciona un idioma",
   "confirmOnDateError": "No puedes confirmar antes de la fecha del servicio",
-  "confirmOnRejectError": "No puedes rechazar sin dejar un comentario"
+  "confirmOnRejectError": "No puedes rechazar sin dejar un comentario",
+  "loading:": "Cargando...",
+  "assign": "Asignar a... (Buscar)"
 }

@@ -4,6 +4,7 @@ import { ActivityIndicator, Text } from 'react-native-paper';
 import { useLoadingStore } from '../state';
 import { buttonStyles } from '../../styles/styles';
 import { useTranslation } from 'react-i18next';
+import { colors } from '../../styles/colors';
 
 
 interface LoadingButton {
@@ -17,11 +18,11 @@ export const LoadingButton: React.FC<LoadingButton> = ({ label, onPress }) => {
 
     return (
         <TouchableOpacity disabled={isLoading ? true : false}
-            style={[buttonStyles.button, isLoading && { backgroundColor: 'gray' }]} onPress={onPress}>
+            style={[buttonStyles.button, isLoading && { backgroundColor: colors.gray }]} onPress={onPress}>
 
             {
                 isLoading ? (
-                    <ActivityIndicator />
+                    <Text style={{ fontWeight: 600, textAlign: 'center' }}>{t('loading')}</Text>
                 )
                     : (
                         <Text style={buttonStyles.buttonText} variant='bodyMedium' >{t(label || 'Click')}</Text>

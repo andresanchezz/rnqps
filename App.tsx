@@ -6,16 +6,19 @@ import KickoffStackNavigation from './app/navigation/kickoff-stack.navigation'
 import { I18nextProvider } from 'react-i18next'
 import i18n from './i18n/i18next'
 import Toast from 'react-native-toast-message'
+import { PaperProvider } from 'react-native-paper'
 
 export default function App() {
   return (
     <I18nextProvider i18n={i18n}>
       <SafeAreaView style={{ flex: 1 }}>
-      <NavigationContainer>
-        <KickoffStackNavigation />
-      </NavigationContainer>
+        <PaperProvider>
+          <NavigationContainer>
+            <KickoffStackNavigation />
+          </NavigationContainer>
+        </PaperProvider>
+      </SafeAreaView>
       <Toast />
-    </SafeAreaView>
     </I18nextProvider>
   )
 }

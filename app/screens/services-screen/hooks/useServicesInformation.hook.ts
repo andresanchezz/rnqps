@@ -276,7 +276,7 @@ const useServicesInformation = () => {
   const filterCleaner = (text: string) => {
 
     setFilterquery(text);
-    
+
     if (text.trim() !== '') {
       const filteredList = cleanersList.filter((cleaner) =>
         cleaner.name.toLowerCase().includes(text.toLowerCase())
@@ -381,6 +381,30 @@ const useServicesInformation = () => {
     }
   };
 
+  const reassignService = async (bottomSheetRef: React.RefObject<BottomSheetMethods>) => {
+
+    if (!selectedService || !selectedCleaner) {
+      return;
+    }
+
+    const updatedData = {
+      date: selectedService.date,
+      schedule: selectedService.schedule,
+      comment: selectedService.comment,
+      userComment: selectedService.userComment,
+      unitySize: selectedService.unitySize,
+      unitNumber: selectedService.unitNumber,
+      communityId: selectedService.communityId,
+      typeId: selectedService.typeId,
+      statusId: selectedService.statusId,
+      userId: selectedCleaner.id,
+    };
+
+    await apiServicesQPS.patch(`/services/${selectedService.id}`, updatedData);
+
+    bottomSheetRef.current?.close();
+  }
+
   useEffect(() => {
     if (user.roleId === "1") {
       getCleanersList();
@@ -436,7 +460,11 @@ const useServicesInformation = () => {
     isScheduleSelected,
     setIsScheduleSelected,
 
-    options
+    options,
+    selectedCleaner,
+    setSelectedCleaner,
+
+    reassignService
 
   };
 };

@@ -62,5 +62,7 @@
   "all": "All",
   "selectLanguage": "Select a language",
   "confirmOnDateError": "You can't confirm before the service date",
-   "confirmOnRejectError": "You can't reject without leave a comment"
+  "confirmOnRejectError": "You can't reject without leave a comment",
+  "loading:": "Loading...",
+    "assign": "Assign to... (Search)"
 }
