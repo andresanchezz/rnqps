@@ -1,4 +1,4 @@
-import { KeyboardAvoidingView, Platform, ScrollView, Image, View, TouchableOpacity } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Image, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import { TextInput, Text, } from 'react-native-paper';
@@ -23,21 +23,19 @@ const LoginScreen = () => {
   return (
 
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.mainView}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 30 }}>
 
-        <Image
-          style={{ width: '100%', height: '35%' }}
-          source={require('../../../assets/adaptive-icon.png')}
-        />
-
-        <View style={{ flex: 1, justifyContent: 'space-evenly' }}>
-          <Text style={{ textAlign: 'center', color: colors.primary }}>
-            {t('welcome')}
-          </Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignContent: 'center' }}>
           <View>
+
+            <Image
+              style={{ width: '90%', height: '40%' }}
+              source={require('../../../assets/logoqps.png')}
+            />
+            <View style={{ height: 35 }}></View>
             <TextInput
               label={t('email')}
               value={username}
@@ -46,7 +44,7 @@ const LoginScreen = () => {
               autoCapitalize="none"
               mode="outlined"
             />
-            <View style={{ height: 25 }}></View>
+            <View style={{ height: 15 }}></View>
             <TextInput
               label={t('password')}
               value={password}
@@ -54,9 +52,10 @@ const LoginScreen = () => {
               secureTextEntry
               mode="outlined"
             />
+            <View style={{ height: 25 }}></View>
+            <LoadingButton label='Sign in' onPress={handleLogin} />
           </View>
 
-          <LoadingButton label='Sign in' onPress={handleLogin} />
 
         </View>
       </ScrollView>
@@ -67,3 +66,9 @@ const LoginScreen = () => {
 
 export default LoginScreen
 
+const styles = StyleSheet.create({
+  mainView: {
+    flex: 1,
+    backgroundColor: '#f6ffff'
+  }
+})

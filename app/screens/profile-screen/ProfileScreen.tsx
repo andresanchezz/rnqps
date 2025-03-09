@@ -46,7 +46,7 @@ export const ProfileScreen = () => {
       backgroundColor: colors.light,
     },
     avatar: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.secondary,
     },
     headBox: {
       alignItems: 'center',
@@ -70,7 +70,7 @@ export const ProfileScreen = () => {
       alignItems: "center", 
     },
     languageRowText: {
-      color: colors.primary
+      color: colors.secondary
     },
     languageContent: {
       marginTop: 10,

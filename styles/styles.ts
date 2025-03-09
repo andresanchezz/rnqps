@@ -8,7 +8,7 @@ const buttonBorderRadius = 4;
 
 export const buttonStyles = StyleSheet.create({
     button: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.secondary,
         padding: buttonPadding,
         borderRadius: buttonBorderRadius,
     },
