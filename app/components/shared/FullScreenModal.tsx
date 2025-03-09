@@ -1,13 +1,28 @@
 import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, Animated } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Animated,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { IconButton, Portal } from 'react-native-paper';
 
-export const FullScreenModal = ({ visible, onClose, children }: { visible: boolean, onClose: () => void, children: React.ReactNode }) => {
+export const FullScreenModal = ({
+  visible,
+  onClose,
+  children,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (visible) {
-
       fadeAnim.setValue(0);
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -18,7 +33,6 @@ export const FullScreenModal = ({ visible, onClose, children }: { visible: boole
   }, [visible]);
 
   const hideModal = () => {
-
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 300,
@@ -39,7 +53,6 @@ export const FullScreenModal = ({ visible, onClose, children }: { visible: boole
         ]}
       >
         <View style={styles.container}>
-
           <View style={styles.header}>
             <IconButton
               icon="close"
@@ -48,10 +61,17 @@ export const FullScreenModal = ({ visible, onClose, children }: { visible: boole
             />
           </View>
 
-
-          <View style={styles.content}>
-            {children}
-          </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardAvoidingView}
+          >
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Animated.View>
     </Portal>
@@ -78,10 +98,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'flex-end',
   },
-  content: {
+  keyboardAvoidingView: {
     flex: 1,
-    marginTop: 10,
-    paddingHorizontal: 20
+  },
+  scrollContent: {
+    flexGrow: 1, 
+    paddingHorizontal: 20,
+    paddingBottom: 100, 
   },
   closeButton: {
 

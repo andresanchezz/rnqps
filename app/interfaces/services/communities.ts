@@ -1,3 +1,8 @@
+export interface Communities {
+    data: Community[];
+    meta: Meta;
+}
+
 export interface Community {
     id:            string;
     communityName: string;
@@ -9,7 +14,13 @@ export interface Community {
 
 export interface Company {
     id:          string;
-    companyName: string;
+    companyName: CompanyName;
+}
+
+export enum CompanyName {
+    GreystarManagementServices = "Greystar Management Services",
+    PantherResidentialManagement = "Panther Residential Management",
+    VenterraRealty = "Venterra Realty",
 }
 
 export interface User {
@@ -22,5 +33,18 @@ export interface User {
 
 export interface Role {
     id:   string;
-    name: string;
+    name: Name;
+}
+
+export enum Name {
+    Manager = "Manager",
+}
+
+export interface Meta {
+    page:            number;
+    take:            number;
+    totalCount:      number;
+    pageCount:       number;
+    hasPreviousPage: boolean;
+    hasNextPage:     boolean;
 }

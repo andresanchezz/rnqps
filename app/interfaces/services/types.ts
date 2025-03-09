@@ -1,9 +1,9 @@
 export interface CleaningTypes {
-    data: Datum[];
+    data: Type[];
     meta: Meta;
 }
 
-export interface Datum {
+export interface Type {
     id:           string;
     description:  Description;
     cleaningType: CleaningType;

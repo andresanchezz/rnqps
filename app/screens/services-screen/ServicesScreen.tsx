@@ -30,13 +30,13 @@ import { LoadingButton } from "../../components/LoadingButton";
 import { FullScreenModal } from "../../components/shared/FullScreenModal";
 
 
+
 const ServicesScreen = () => {
   const {
     user,
     acceptBottomSheet,
     rejectBottomSheet,
     confirmBottomSheet,
-    createBottomSheet,
     reassignBottomSheet,
     openBottomSheet,
     statusIdMap,
@@ -72,11 +72,18 @@ const ServicesScreen = () => {
     setSelectedCleaner,
 
     reassignService,
-    isLoading
+    isLoading,
+
+    cleaningTypes,
+    createService,
+    isFullScreenVisible,
+    setIsFullScreenVisible
+
 
   } = useServicesInformation();
 
   const { t } = useTranslation();
+
 
   //* DATE Y TIME PICKER 
   const [showDate, setShowDate] = useState(false);
@@ -272,7 +279,6 @@ const ServicesScreen = () => {
     setRoutes(routes);
   }, [servicesByStatus, index]);
 
-  const [xd, setXd] = useState(true);
 
   return (
     <View style={styles.mainContainer}>
@@ -286,15 +292,17 @@ const ServicesScreen = () => {
 
       {user.roleId !== "4" && (
         <View style={styles.fabContainer}>
-          <FAB icon="plus" onPress={() => openBottomSheet(createBottomSheet)} />
+          <FAB icon="plus" onPress={() => setIsFullScreenVisible(true)} />
         </View>
       )}
 
       {/*Create service*/}
-      <MyCustomBottomSheet ref={createBottomSheet} snapPoints={['50%', '95%']}>
-        <ScrollView style={styles.mainContainer}>
-          <View style={styles.mainContainer}>
-            <Text style={styles.buttonSheetText} variant="headlineSmall">{t('createService')}</Text>
+      <FullScreenModal visible={isFullScreenVisible} onClose={() => setIsFullScreenVisible(false)}>
+        <View style={styles.mainContainerModal}>
+          <View style={styles.innerContainer}>
+            <Text style={styles.buttonSheetText} variant="headlineSmall">
+              {t('createService')}
+            </Text>
 
             {/* Selector de fecha */}
             <Pressable onPress={toggleDatePicker}>
@@ -305,6 +313,8 @@ const ServicesScreen = () => {
                 editable={false}
               />
             </Pressable>
+
+            <View style={styles.spacer} />
 
             {showDate && (
               <DateTimePicker
@@ -326,6 +336,8 @@ const ServicesScreen = () => {
               />
             </Pressable>
 
+            <View style={styles.spacer} />
+
             {showSchedule && (
               <DateTimePicker
                 mode="time"
@@ -336,12 +348,12 @@ const ServicesScreen = () => {
               />
             )}
 
-
             <Dropdown
               mode="outlined"
               label={t('unitSize')}
               placeholder={t('selectUnitSize')}
               options={[
+                { label: "N/A", value: "N/A" },
                 { label: `1 ${t('bedroom')}`, value: "1 Bedroom" },
                 { label: `2 ${t('bedroom')}`, value: "2 Bedroom" },
                 { label: `3 ${t('bedroom')}`, value: "3 Bedroom" },
@@ -351,7 +363,9 @@ const ServicesScreen = () => {
               value={unitySize}
               onSelect={(value: string | undefined) => setUnitySize(value)}
             />
-            <View />
+
+            <View style={styles.spacer} />
+
             <TextInput
               mode="outlined"
               placeholder={t('unitNumber')}
@@ -359,7 +373,9 @@ const ServicesScreen = () => {
               value={unityNumber}
               onChangeText={(text) => setUnityNumber(text)}
             />
-            <View />
+
+            <View style={styles.spacer} />
+
             <Dropdown
               mode="outlined"
               label={t('community')}
@@ -368,17 +384,54 @@ const ServicesScreen = () => {
               value={communityId}
               onSelect={(value) => setCommunityId(value)}
             />
-            <View />
+
+            <View style={styles.spacer} />
+
+            {/* Assign cleaner */}
+
+            {
+              user.roleId === "1" &&
+              <View style={{ flex: 1 }}>
+                <TextInput
+                  onChangeText={(value) => { filterCleaner(value) }}
+                  mode="outlined"
+                  label="Assign service"
+                  value={filterQuery}
+                />
+
+                <View style={styles.cleanersListCreate}>
+                  <ScrollView nestedScrollEnabled={true}>
+                    {filteredCleanersList?.map((cleaner) => (
+                      <TouchableOpacity
+                        onPress={() => { setSelectedCleaner(cleaner) }}
+                        style={[styles.cleanersListItem, selectedCleaner?.id === cleaner.id && styles.selectedCleaner]}
+                        key={cleaner.id}
+                      >
+                        <Text variant="bodyMedium" style={selectedCleaner?.id === cleaner.id && { color: colors.light }}>
+                          {cleaner.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+                <View style={styles.spacer} />
+              </View>
+              
+            }
+
+   
+
             <Dropdown
               mode="outlined"
               label={t("type")}
               placeholder={t("selectType")}
-              options={options?.cleaningTypes}
+              options={cleaningTypes}
               value={typeId}
               onSelect={(value) => setTypeId(value)}
             />
 
-            <View />
+            <View style={styles.spacer} />
+
             <Dropdown
               mode="outlined"
               label="Extras"
@@ -387,7 +440,9 @@ const ServicesScreen = () => {
               value={extraId}
               onSelect={(value) => setExtraId(value)}
             />
-            <View />
+
+            <View style={styles.spacer} />
+
             <TextInput
               mode="outlined"
               placeholder={t("comment")}
@@ -395,12 +450,16 @@ const ServicesScreen = () => {
               value={comment}
               onChangeText={(text) => setComment(text)}
             />
-            <View />
 
+            <View style={styles.spacer} />
+
+            {/* Botón en la parte inferior */}
+            <View style={styles.buttonContainer}>
+              <LoadingButton label={t("create")} onPress={createService} />
+            </View>
           </View>
-          <LoadingButton label={t("create")} onPress={() => { reassignService(reassignBottomSheet) }} />
-        </ScrollView>
-      </MyCustomBottomSheet>
+        </View>
+      </FullScreenModal>
 
       {/*Accept service*/}
       <MyCustomBottomSheet ref={acceptBottomSheet} snapPoints={['15%', '25%']}>
@@ -421,7 +480,10 @@ const ServicesScreen = () => {
           <Text style={styles.buttonSheetText} variant="headlineSmall">{t('rejectService')}</Text>
           <Text style={styles.buttonSheetText} variant="bodyMedium">{t('textRejectService')}</Text>
 
+
           <TextInput onChangeText={(text) => setComment(text)} mode="outlined"></TextInput>
+
+          <View style={styles.spacer} />
 
         </View>
 
@@ -478,13 +540,6 @@ const ServicesScreen = () => {
 
 
 
-      {/* <FullScreenModal onClose={() => { setXd(false) }} visible={xd}>
-
-              <TextInput></TextInput>
-
-        <LoadingButton label="confirmService" onPress={() => { handleBottomSheetsActions('5', confirmBottomSheet) }} />
-      </FullScreenModal> */}
-
 
     </View>
 
@@ -496,6 +551,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light,
   },
+  mainContainerModal: {
+    flex: 1,
+    backgroundColor: colors.light,
+  },
   fabContainer: {
     position: "absolute",
     right: 16,
@@ -503,33 +562,41 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: 16,
   },
-  buttonSheetText: {
-    textAlign: 'center',
-    marginBottom: 8
-  },
   cleanersList: {
     height: 220,
-    marginVertical: 15
+    marginVertical: 15,
   },
   cleanersListCreate: {
     height: 120,
-    marginVertical: 15
+    marginVertical: 15,
   },
   cleanersListItem: {
     padding: 8,
     marginVertical: 3,
   },
   selectedCleaner: {
-    backgroundColor: colors.secondary
+    backgroundColor: colors.secondary,
   },
   footer: {
-    paddingVertical: 10
+    paddingVertical: 10,
   },
   textCenter: {
+    textAlign: 'center',
+  },
+  innerContainer: {
+    flex: 1,
+    justifyContent: 'space-between', // Asegura que el botón esté en la parte inferior
+  },
+  buttonSheetText: {
+    marginBottom: 20,
     textAlign: 'center'
-  }
-
-
+  },
+  spacer: {
+    height: 16,
+  },
+  buttonContainer: {
+    marginTop: 20,
+  },
 });
 
 export default ServicesScreen;

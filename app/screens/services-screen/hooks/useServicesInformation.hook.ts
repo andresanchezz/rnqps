@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
 import { apiServicesQPS } from '../../../api/services-qps';
-import { Community, DataService, Service, ServiceByStatusId, ServiceStatus } from '../../../interfaces/services/services.interface';
+import { DataService, Service, ServiceByStatusId, ServiceStatus } from '../../../interfaces/services/services.interface';
 import * as secureStore from 'expo-secure-store';
 import { Cleaner, DataCleaner } from '../../../interfaces/user/userById';
 import { Extras } from '../../../interfaces/services/extras';
-import { CleaningTypes } from '../../../interfaces/services/types';
+import { CleaningTypes, Type } from '../../../interfaces/services/types';
 import moment from 'moment';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
+import { Communities, Community } from '../../../interfaces/services/communities';
 
 const useServicesInformation = () => {
   const userString = secureStore.getItem('userData');
@@ -47,7 +48,7 @@ const useServicesInformation = () => {
   const [cleanersList, setCleanersList] = useState<DataCleaner[]>([]);
   const [filteredCleanersList, setFilteredCleanersList] = useState<DataCleaner[]>([]);
   const [filterQuery, setFilterquery] = useState<string>('');
-  const [selectedCleaner, setSelectedCleaner] = useState<DataCleaner>();
+  const [selectedCleaner, setSelectedCleaner] = useState<DataCleaner | null>();
 
   //* Statuses (LIFE CICLE NO QPS DATA)
 
@@ -55,8 +56,7 @@ const useServicesInformation = () => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   //* BOTTOM SHEETS
-
-  const createBottomSheet = useRef<BottomSheetMethods>(null);
+  const [isFullScreenVisible, setIsFullScreenVisible] = useState(false);
   const acceptBottomSheet = useRef<BottomSheetMethods>(null);
   const rejectBottomSheet = useRef<BottomSheetMethods>(null);
   const confirmBottomSheet = useRef<BottomSheetMethods>(null);
@@ -69,11 +69,12 @@ const useServicesInformation = () => {
     value: string;
   }
 
-  const [options, setOptions] = useState<{ communities: Option[], extras: Option[], cleaningTypes: Option[] }>({
+  const [options, setOptions] = useState<{ communities: Option[], extras: Option[] }>({
     communities: [],
-    cleaningTypes: [],
     extras: [],
   });
+
+  const [cleaningTypes, setCleaningTypes] = useState<Option[]>([]);
 
   //* STATUS ID
   const mapStatusId = (statusString: string): ServiceStatus => {
@@ -97,6 +98,8 @@ const useServicesInformation = () => {
     completed: "5",
     finished: "6",
   };
+
+  //* FETCH DATA
 
   const handleGetData = async ({ statusId, page }: { statusId: string, page: number }, isRefreshing: boolean = false) => {
     if (isLoading) return;
@@ -141,7 +144,7 @@ const useServicesInformation = () => {
     try {
       const { data } = await apiServicesQPS.get<Service>(`/services/by-status/${statusId}?page=${page}`);
       filterServicesByStatus(data);
-      console.log(data.meta);
+
     } catch (error) {
       console.log('Error en getAdminServices', error);
     }
@@ -187,6 +190,8 @@ const useServicesInformation = () => {
         servicesByStatus[statusKey].meta = data.meta;
       }
     }
+
+
   };
 
   //* DATA DROPDOWNS
@@ -202,10 +207,11 @@ const useServicesInformation = () => {
     return data;
   };
 
-  const getTypesList = async () => {
+  const getTypesListByCommunity = async (communityId: string) => {
     let data;
+
     try {
-      data = (await apiServicesQPS.get<CleaningTypes>('/types')).data;
+      data = (await apiServicesQPS.get<Type[]>(`/types/by-community/${communityId}`)).data;
       return data
     } catch (error: any) {
       /* Sentry.captureMessage(error); */
@@ -213,7 +219,7 @@ const useServicesInformation = () => {
     return data;
   };
 
-  const getCommunitiesList = async () => {
+  const getCommunitiesByManagerList = async () => {
     let data;
     try {
       data = (await apiServicesQPS.get<Community[]>(`/communities/by-manager/${user?.id}`)).data;
@@ -224,36 +230,50 @@ const useServicesInformation = () => {
     }
   };
 
+  const getCommunitiesList = async () => {
+    let data;
+    try {
+      data = (await apiServicesQPS.get<Communities>(`/communities?take=50`)).data;
+      return data.data
+    } catch (error: any) {
+      /* Sentry.captureMessage(error); */
+      return [];
+    }
+  };
+
   const fetchDataToCreateModal = async () => {
     try {
-      const [typesList, communitiesList, extrasList] = await Promise.all([
-        getTypesList(),
-        getCommunitiesList(),
-        getExtrasList()
-      ]);
+      let communitiesList;
 
-      const cleaningTypeOptions = typesList?.data?.map((type) => ({
-        label: type.cleaningType,
-        value: type.id,
-      })) || [];
+      if (user?.roleId === "1") {
+        communitiesList = await getCommunitiesList();
+      } else if (user?.roleId === "3") {
+        communitiesList = await getCommunitiesByManagerList();
+      } else {
+        return;
+      }
 
-      const communityOptions = communitiesList?.map((community) => ({
+
+      const extrasList = await getExtrasList();
+
+
+      const communityOptions = communitiesList.map((community) => ({
         label: community.communityName,
         value: community.id,
-      })) || [];
+      }));
+
 
       const extrasOptions = extrasList?.data?.map((extra) => ({
         label: extra.item,
         value: extra.id,
       })) || [];
 
+
       setOptions({
         communities: communityOptions,
         extras: extrasOptions,
-        cleaningTypes: cleaningTypeOptions,
       });
 
-      console.log(communityOptions);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -264,12 +284,28 @@ const useServicesInformation = () => {
     try {
       const { data } = await apiServicesQPS.get<Cleaner>(`/users?take=50`);
       setCleanersList(data.data)
+      setFilteredCleanersList(data.data)
     } catch (error: any) {
       console.log(error)
       /* Sentry.captureMessage(error); */
       return [];
     }
   }
+
+  const setTypesOptions = async () => {
+    console.log("Current communityId:", communityId); // Depuración
+    if (communityId) {
+      const typesList = await getTypesListByCommunity(communityId);
+      const cleaningTypeOptions = typesList?.map((type) => ({
+        label: type.cleaningType,
+        value: type.id,
+      })) || [];
+
+      console.log("Cleaning type options:", cleaningTypeOptions); // Depuración
+      setCleaningTypes(cleaningTypeOptions); // Actualiza el estado independiente
+    }
+  };
+
 
   //*Filter search
 
@@ -381,6 +417,61 @@ const useServicesInformation = () => {
     }
   };
 
+  const createService = async () => {
+
+    if (!communityId || !typeId || !date || !schedule || !unitySize || !unityNumber) {
+      Toast.show({
+        type: 'error',
+        text1: t('error').toUpperCase(),
+        text2: t('fillRequiredFields'),
+      });
+      return;
+    }
+
+    const newServiceData = {
+      date: moment(date).format('YYYY-MM-DD'),
+      schedule: moment(schedule).format('HH:mm'),
+      comment: comment || '',
+      unitySize,
+      unitNumber: unityNumber,
+      communityId,
+      typeId,
+      statusId: "1",
+      userId: selectedCleaner?.id || null,
+      extraId: extraId || null,
+    };
+
+    try {
+
+      await apiServicesQPS.post('/services', newServiceData);
+
+      setComment('');
+      setUnitySize('');
+      setUnityNumber('');
+      setTypeId('');
+      setExtraId('');
+      setCommunityId('');
+      setDate(new Date());
+      setSchedule(new Date());
+      setIsDateSelected(false);
+      setIsScheduleSelected(false);
+      setSelectedCleaner(null);
+
+      // Cerrar el modal
+      setIsFullScreenVisible(false);
+
+      handleGetData({ statusId: "1", page: 1 }, true);
+
+    } catch (error) {
+      console.error('Error creating service:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: t('service creation failed'),
+      });
+    }
+  };
+
   const reassignService = async (bottomSheetRef: React.RefObject<BottomSheetMethods>) => {
 
     if (!selectedService || !selectedCleaner) {
@@ -409,7 +500,13 @@ const useServicesInformation = () => {
     if (user.roleId === "1") {
       getCleanersList();
     }
-  }, [servicesByStatus])
+
+    if (communityId) {
+      setTypesOptions();
+
+    }
+
+  }, [servicesByStatus, communityId])
 
 
   return {
@@ -417,7 +514,6 @@ const useServicesInformation = () => {
     acceptBottomSheet,
     rejectBottomSheet,
     confirmBottomSheet,
-    createBottomSheet,
     reassignBottomSheet,
     openBottomSheet,
     statusIdMap,
@@ -464,7 +560,11 @@ const useServicesInformation = () => {
     selectedCleaner,
     setSelectedCleaner,
 
-    reassignService
+    reassignService,
+    cleaningTypes,
+    createService,
+    isFullScreenVisible,
+    setIsFullScreenVisible
 
   };
 };
