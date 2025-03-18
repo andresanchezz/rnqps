@@ -126,7 +126,7 @@ const useServicesInformation = () => {
         console.log('rol pendiente');
         break;
       case "3":
-        await getManagerServices();
+        await getManagerServices({ statusId, page });
         break;
       case "4":
         await getCleanerServices({ statusId, page });
@@ -143,6 +143,7 @@ const useServicesInformation = () => {
   const getAdminServices = async ({ statusId, page }: { statusId: string, page: number }) => {
     try {
       const { data } = await apiServicesQPS.get<Service>(`/services/by-status/${statusId}?page=${page}`);
+      console.log(data.meta);
       filterServicesByStatus(data);
 
     } catch (error) {
@@ -159,18 +160,19 @@ const useServicesInformation = () => {
     }
   };
 
-  const getManagerServices = async () => {
+  const getManagerServices = async ({ statusId, page }: { statusId: string, page: number }) => {
     const communities = await getCommunitiesByManager();
     try {
-      const { data } = await apiServicesQPS.post('/services/by-communities?take=50', { communities });
-      filterServicesByStatus(data.data);
+      const { data } = await apiServicesQPS.post(`/services/by-communities?page=${page}`, { communities, statusID:statusId  });
+      filterServicesByStatus(data);
     } catch (error) {
-      console.log('Error en getManagerServices', error);
+      return []
     }
   };
 
   const getCommunitiesByManager = async (): Promise<string[]> => {
     let communities: string[] = [];
+
     try {
       const { data } = await apiServicesQPS.get<Community[]>(`/communities/by-manager/${user?.id}`);
       data.map((community) => communities.push(community.id));
@@ -438,7 +440,7 @@ const useServicesInformation = () => {
       typeId,
       statusId: "1",
       userId: selectedCleaner?.id || null,
-      extraId: extraId || null,
+      extraId: [extraId],
     };
 
     try {
@@ -500,7 +502,6 @@ const useServicesInformation = () => {
     if (user.roleId === "1") {
       getCleanersList();
     }
-
     if (communityId) {
       setTypesOptions();
 

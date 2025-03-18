@@ -266,7 +266,6 @@ const ServicesScreen = () => {
       case "3":
         handleGetData({ statusId: "1", page: 1 });
         fetchDataToCreateModal();
-
         break;
       case "4":
         handleGetData({ statusId: "2", page: 1 });
