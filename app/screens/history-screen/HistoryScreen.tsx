@@ -24,24 +24,23 @@ const HistoryScreen = () => {
 
     let dataToShow = [
         ...servicesByStatus.completed.data,
-        ...servicesByStatus.finished.data
+        ...servicesByStatus.finished.data,
+        ...servicesByStatus.rejected.data,
     ]
 
     const handlePullRefresh = () => {
-
-
         Promise.all([
-            handleGetData({ page: 1, statusId: "5" }, true),
-            handleGetData({ page: 1, statusId: "6" }, true)
-        ])
-
-
-    }
-
-    useEffect(() => {
-        Promise.all([
+            handleGetData({ page: 1, statusId: "4" }),
             handleGetData({ page: 1, statusId: "5" }),
             handleGetData({ page: 1, statusId: "6" })
+        ])
+    }
+    
+    useEffect(() => {
+        Promise.all([
+            handleGetData({ page: 1, statusId: "4" }),
+            handleGetData({ page: 1, statusId: "5" }),
+            handleGetData({ page: 1, statusId: "6" }),
         ])
     }, [])
 
@@ -71,6 +70,7 @@ const HistoryScreen = () => {
                     const currentPageCompleted = servicesByStatus["completed"].meta.page || 1;
                     const currentPageFinished = servicesByStatus["finished"].meta.page || 1;
 
+                    handleGetData({ page: currentPageFinished + 1, statusId: "4" })
                     handleGetData({ page: currentPageCompleted + 1, statusId: "5" })
                     handleGetData({ page: currentPageFinished + 1, statusId: "6" })
 
