@@ -152,6 +152,7 @@ const useServicesInformation = () => {
   };
 
   const getCleanerServices = async ({ statusId, page }: { statusId: string, page: number }) => {
+  
     try {
       const { data } = await apiServicesQPS.get<Service>(`/services/by-user/${user?.id}/${statusId}?page=${page}`);
       filterServicesByStatus(data);
@@ -489,7 +490,7 @@ const useServicesInformation = () => {
       unitNumber: selectedService.unitNumber,
       communityId: selectedService.communityId,
       typeId: selectedService.typeId,
-      statusId: selectedService.statusId,
+      statusId: "2",
       userId: selectedCleaner.id,
     };
 
