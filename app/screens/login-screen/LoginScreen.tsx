@@ -69,6 +69,6 @@ export default LoginScreen
 const styles = StyleSheet.create({
   mainView: {
     flex: 1,
-    backgroundColor: '#f6ffff'
+    backgroundColor: '#ffffff'
   }
 })
