@@ -439,7 +439,7 @@ const useServicesInformation = () => {
       unitNumber: unityNumber,
       communityId,
       typeId,
-      statusId: "1",
+      statusId: selectedCleaner?.id ? '2' : '1',
       userId: selectedCleaner?.id || null,
       extraId: [extraId],
     };
@@ -500,7 +500,7 @@ const useServicesInformation = () => {
   }
 
   useEffect(() => {
-    if (user.roleId === "1") {
+    if (user?.roleId === "1") {
       getCleanersList();
     }
     if (communityId) {
