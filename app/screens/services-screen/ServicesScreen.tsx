@@ -7,13 +7,14 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { TabBar, TabView } from "react-native-tab-view";
 import { ActivityIndicator, FAB, Text, TextInput } from "react-native-paper";
-import { Dropdown, DropdownInput } from "react-native-paper-dropdown";
+import { Dropdown } from "react-native-paper-dropdown";
 
 import { useTranslation } from "react-i18next";
 
@@ -89,27 +90,18 @@ const ServicesScreen = () => {
   const [showDate, setShowDate] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
 
-
-  const toggleDatePicker = () => {
-    setShowDate(!showDate);
-  };
-
-  const toggleSchedulePicker = () => {
-    setShowSchedule(!showSchedule);
-  };
-
-  const onChangeDate = (event: any, selectedDate: Date | undefined) => {
+  const handleDateChange = (event: any, selectedDate: Date | undefined) => {
+    setShowDate(false);
     if (selectedDate) {
       setDate(selectedDate);
     }
-    setShowDate(false);
   };
 
-  const onChangeSchedule = (event: any, selectedTime: Date | undefined) => {
+  const handleTimeChange = (event: any, selectedTime: Date | undefined) => {
+    setShowSchedule(Platform.OS === 'ios'); 
     if (selectedTime) {
       setSchedule(selectedTime);
     }
-    setShowSchedule(false);
   };
 
   // Formatear la fecha como "15 February 2023"
@@ -159,6 +151,7 @@ const ServicesScreen = () => {
   };
 
   const getTabRoutesByRole = (roleId: string): Route[] => {
+
     switch (roleId) {
       case "1":
         return [
@@ -257,6 +250,13 @@ const ServicesScreen = () => {
     />
   );
 
+  const fullScreenModalOnClose = () =>{
+    setIsFullScreenVisible(false)
+    setShowSchedule(false);
+    setShowDate(false);
+    setSelectedCleaner(null);
+  }
+
   useEffect(() => {
     switch (user?.roleId) {
       case "1":
@@ -289,14 +289,14 @@ const ServicesScreen = () => {
         onIndexChange={handleIndexChange}
       />
 
-      {user.roleId !== "4" && (
+      {user?.roleId !== "4" && (
         <View style={styles.fabContainer}>
           <FAB icon="plus" onPress={() => setIsFullScreenVisible(true)} />
         </View>
       )}
 
       {/*Create service*/}
-      <FullScreenModal visible={isFullScreenVisible} onClose={() => setIsFullScreenVisible(false)}>
+      <FullScreenModal visible={isFullScreenVisible} onClose={() => fullScreenModalOnClose()}>
         <View style={styles.mainContainerModal}>
           <View style={styles.innerContainer}>
             <Text style={styles.buttonSheetText} variant="headlineSmall">
@@ -304,13 +304,15 @@ const ServicesScreen = () => {
             </Text>
 
             {/* Selector de fecha */}
-            <Pressable onPress={toggleDatePicker}>
-              <TextInput
-                mode="outlined"
-                placeholder={t("selectDate")}
-                value={formattedDate}
-                editable={false}
-              />
+            <Pressable onPress={() => setShowDate(true)}>
+              <View pointerEvents="none">
+                <TextInput
+                  mode="outlined"
+                  placeholder={t("selectDate")}
+                  value={formattedDate}
+                  editable={false}
+                />
+              </View>
             </Pressable>
 
             <View style={styles.spacer} />
@@ -318,21 +320,24 @@ const ServicesScreen = () => {
             {showDate && (
               <DateTimePicker
                 mode="date"
-                display="spinner"
+                display={Platform.OS === "ios" ? "inline" : "default"}
                 value={date}
-                onChange={onChangeDate}
+                onChange={handleDateChange}
                 minimumDate={new Date()}
+                themeVariant="light"
               />
             )}
 
             {/* Selector de hora */}
-            <Pressable onPress={toggleSchedulePicker}>
-              <TextInput
-                mode="outlined"
-                placeholder={t("selectTime")}
-                value={formattedTime}
-                editable={false}
-              />
+            <Pressable onPress={() => setShowSchedule(true)}>
+              <View pointerEvents="none">
+                <TextInput
+                  mode="outlined"
+                  placeholder={t("selectTime")}
+                  value={formattedTime}
+                  editable={false}
+                />
+              </View>
             </Pressable>
 
             <View style={styles.spacer} />
@@ -340,10 +345,10 @@ const ServicesScreen = () => {
             {showSchedule && (
               <DateTimePicker
                 mode="time"
-                display="spinner"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
                 value={schedule}
-                onChange={onChangeSchedule}
-                minimumDate={new Date()}
+                onChange={handleTimeChange}
+                themeVariant="light"
               />
             )}
 
@@ -389,7 +394,7 @@ const ServicesScreen = () => {
             {/* Assign cleaner */}
 
             {
-              user.roleId === "1" &&
+              user?.roleId === "1" &&
               <View style={{ flex: 1 }}>
                 <TextInput
                   onChangeText={(value) => { filterCleaner(value) }}
@@ -415,10 +420,10 @@ const ServicesScreen = () => {
                 </View>
                 <View style={styles.spacer} />
               </View>
-              
+
             }
 
-   
+
 
             <Dropdown
               mode="outlined"
