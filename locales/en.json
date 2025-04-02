@@ -64,5 +64,6 @@
   "confirmOnDateError": "You can't confirm before the service date",
   "confirmOnRejectError": "You can't reject without leave a comment",
   "loading:": "Loading...",
-    "assign": "Assign to... (Search)"
+  "assign": "Assign to... (Search)",
+  "fillRequiredFields": "Fill required fields"
 }
